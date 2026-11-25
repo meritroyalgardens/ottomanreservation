@@ -1,62 +1,81 @@
-const CACHE_NAME = "ottoman-rez-v5";
+
+const CACHE_NAME = "ottoman-rez-v6";
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+    caches.keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("push", (event) => {
-  let title = "Yeni Rezervasyon";
-  let body = "Yeni bir rezervasyon kaydı oluşturuldu.";
-  let url = "./";
+  event.waitUntil((async () => {
+    let data = {
+      title: "Yeni Rezervasyon",
+      body: "Yeni bir rezervasyon kaydı oluşturuldu.",
+      url: "./"
+    };
 
-  if (event.data) {
-    try {
-      const data = event.data.json();
-      if (data.title) title = data.title;
-      if (data.body) body = data.body;
-      if (data.url) url = data.url;
-    } catch {
-      const txt = event.data.text();
-      if (txt) body = txt;
+    if (event.data) {
+      try {
+        const received = event.data.json();
+        data = { ...data, ...received };
+      } catch {
+        data.body = event.data.text() || data.body;
+      }
     }
-  }
 
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      tag: "ottoman-rez-" + Date.now(),
+    await self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      tag: data.tag || "ottoman-new-reservation",
       renotify: true,
-      data: { url }
-    })
-  );
+      vibrate: [200, 100, 200],
+      data: {
+        url: data.url || "./"
+      }
+    });
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "./";
 
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ("focus" in client) {
-          return client.focus();
+  event.waitUntil((async () => {
+    const target = new URL(
+      event.notification.data?.url || "./",
+      self.location.origin
+    );
+
+    if (target.origin !== self.location.origin) return;
+
+    const windows = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+
+    for (const client of windows) {
+      if ("focus" in client) {
+        await client.focus();
+        if ("navigate" in client) {
+          await client.navigate(target.href);
         }
+        return;
       }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
+    }
+
+    await self.clients.openWindow(target.href);
+  })());
 });
