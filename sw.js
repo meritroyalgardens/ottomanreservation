@@ -1,8 +1,8 @@
 
-const CACHE_NAME = "ottoman-rez-v6";
+const CACHE_NAME = "ottoman-kebap-v7";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -19,63 +19,95 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Güncel dosyaları önce sunucudan al, bağlantı yoksa önbelleği kullan.
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+
+  // Supabase ve diğer harici servis isteklerine müdahale etme.
+  if (url.origin !== self.location.origin) return;
+
+  event.respondWith(
+    fetch(new Request(request, { cache: "no-store" }))
+      .then((response) => {
+        if (response && response.status === 200 && response.type === "basic") {
+          const copy = response.clone();
+
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, copy);
+          });
+        }
+
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+
+        if (cached) return cached;
+
+        if (request.mode === "navigate") {
+          const fallback = await caches.match("./index.html");
+          if (fallback) return fallback;
+        }
+
+        return Response.error();
+      })
+  );
+});
+
+// Anlık bildirimler
 self.addEventListener("push", (event) => {
-  event.waitUntil((async () => {
-    let data = {
-      title: "Yeni Rezervasyon",
-      body: "Yeni bir rezervasyon kaydı oluşturuldu.",
-      url: "./"
-    };
+  let title = "Yeni Rezervasyon";
+  let body = "Yeni bir rezervasyon kaydı oluşturuldu.";
+  let url = "./";
 
-    if (event.data) {
-      try {
-        const received = event.data.json();
-        data = { ...data, ...received };
-      } catch {
-        data.body = event.data.text() || data.body;
-      }
+  if (event.data) {
+    try {
+      const data = event.data.json();
+
+      if (data.title) title = data.title;
+      if (data.body) body = data.body;
+      if (data.url) url = data.url;
+    } catch {
+      const txt = event.data.text();
+      if (txt) body = txt;
     }
+  }
 
-    await self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "./icon-192.png",
-      badge: "./icon-192.png",
-      tag: data.tag || "ottoman-new-reservation",
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag: "ottoman-rez-" + Date.now(),
       renotify: true,
-      vibrate: [200, 100, 200],
-      data: {
-        url: data.url || "./"
-      }
-    });
-  })());
+      data: { url },
+      icon: "./icon-192.png"
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  event.waitUntil((async () => {
-    const target = new URL(
-      event.notification.data?.url || "./",
-      self.location.origin
-    );
+  const targetUrl =
+    (event.notification.data && event.notification.data.url) || "./";
 
-    if (target.origin !== self.location.origin) return;
-
-    const windows = await self.clients.matchAll({
+  event.waitUntil(
+    clients.matchAll({
       type: "window",
       includeUncontrolled: true
-    });
-
-    for (const client of windows) {
-      if ("focus" in client) {
-        await client.focus();
-        if ("navigate" in client) {
-          await client.navigate(target.href);
+    }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          return client.focus();
         }
-        return;
       }
-    }
 
-    await self.clients.openWindow(target.href);
-  })());
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });
