@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ottoman-rez-v2';
+const CACHE_NAME = 'ottoman-rez-v3';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -17,7 +17,6 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // HTML ve sw.js için her zaman önce ağdan en güncel sürümü çek
   if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/sw.js')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
@@ -37,16 +36,23 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-  let data = { title: 'Ottoman Kebab House', body: 'Yeni rezervasyon geldi.' };
-  try {
-    if (event.data) data = event.data.json();
-  } catch (e) {
-    if (event.data) data.body = event.data.text();
+  let title = 'Ottoman Kebab House';
+  let body = 'Yeni rezervasyon geldi.';
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      if (parsed.title) title = parsed.title;
+      if (parsed.body) body = parsed.body;
+    } catch (e) {
+      const txt = event.data.text();
+      if (txt) body = txt;
+    }
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
+    self.registration.showNotification(title, {
+      body,
       icon: 'icon-192.png',
       badge: 'icon-192.png',
       vibrate: [200, 100, 200],
