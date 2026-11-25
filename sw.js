@@ -1,50 +1,33 @@
-const CACHE_NAME = 'ottoman-rez-v3';
+const CACHE_NAME = "ottoman-rez-v4";
 
-self.addEventListener('install', event => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
     ).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
-
-  if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/sw.js')) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(event.request, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
-  );
-});
-
-self.addEventListener('push', event => {
-  let title = 'Ottoman Kebab House';
-  let body = 'Yeni rezervasyon geldi.';
+self.addEventListener("push", (event) => {
+  let title = "Yeni Rezervasyon";
+  let body = "Yeni bir rezervasyon kaydı oluşturuldu.";
+  let url = "./";
 
   if (event.data) {
     try {
-      const parsed = event.data.json();
-      if (parsed.title) title = parsed.title;
-      if (parsed.body) body = parsed.body;
-    } catch (e) {
+      const data = event.data.json();
+      if (data.title) title = data.title;
+      if (data.body) body = data.body;
+      if (data.url) url = data.url;
+    } catch {
       const txt = event.data.text();
       if (txt) body = txt;
     }
@@ -53,22 +36,27 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: 'icon-192.png',
-      badge: 'icon-192.png',
-      vibrate: [200, 100, 200],
-      data: { url: './' }
+      tag: "ottoman-rez-" + Date.now(),
+      renotify: true,
+      data: { url }
     })
   );
 });
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "./";
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const client of list) {
-        if ('focus' in client) return client.focus();
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          return client.focus();
+        }
       }
-      if (clients.openWindow) return clients.openWindow('./');
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
     })
   );
 });
