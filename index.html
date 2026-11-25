@@ -124,16 +124,47 @@ textarea{resize:vertical}
   min-width:0;aspect-ratio:1/1;border:1px solid var(--line);
   border-radius:11px;background:white;color:var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;font-size:13px;
+  gap:4px;font-size:14px;
 }
-.day i{font-style:normal;font-size:9px;color:var(--green);font-weight:850}
+.day i{
+  font-style:normal;font-size:12px;color:var(--green);font-weight:900;
+  min-width:23px;padding:3px 5px;border-radius:7px;
+  background:#EAF5EF;line-height:1;
+}
 .day.off{background:#EDF0F3;color:#A9B1BA;border-style:dashed}
 .day.today{border:2px solid var(--gold)}
 .day.sel{background:var(--navy);border-color:var(--navy);color:white}
-.day.sel i{color:#E8C987}
+.day.sel i{color:#14263F;background:#E8C987}
 .day:disabled{cursor:not-allowed}
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
 .search{margin-bottom:10px}
+
+/* REZERVASYON LİSTESİ ÖZETİ */
+.list-summary{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 17px;
+}
+.list-summary-item{
+  background:var(--navy);
+  color:white;
+  border-radius:14px;
+  padding:14px;
+  min-width:0;
+}
+.list-summary-label{
+  font-size:11px;
+  color:#D8C39F;
+  line-height:1.4;
+}
+.list-summary-number{
+  font-size:25px;
+  font-weight:800;
+  margin-top:5px;
+  line-height:1.1;
+}
+
 .day-heading{font-size:16px;font-weight:850;margin:20px 2px 12px}
 .res-item{
   background:white;border:1px solid var(--line);border-radius:16px;
@@ -248,6 +279,7 @@ textarea{resize:vertical}
   main{padding:15px 11px}
   .card{padding:14px}
   .res-actions .btn{flex:1}
+  .list-summary-number{font-size:23px}
 }
 </style>
 </head>
@@ -374,9 +406,20 @@ textarea{resize:vertical}
     <button class="btn btn-outline btn-block" id="clearFilters">Filtreleri Temizle</button>
   </div>
 
+  <!-- FİLTRELENMİŞ REZERVASYON VE PAX ÖZETİ -->
+  <div class="list-summary">
+    <div class="list-summary-item">
+      <div class="list-summary-label">Gösterilen rezervasyon</div>
+      <div class="list-summary-number" id="totalReservations">0</div>
+    </div>
+    <div class="list-summary-item">
+      <div class="list-summary-label">Toplam misafir (PAX)</div>
+      <div class="list-summary-number" id="totalPax">0</div>
+    </div>
+  </div>
+
   <div class="day-heading" id="dayLbl"></div>
   <div id="items"></div>
-  <div class="total"><span>Gösterilen toplam misafir</span><b id="totalPax">0</b></div>
   <button class="btn btn-gold btn-block" id="addForDay" style="margin-top:13px">＋ Bu Güne Rezervasyon Ekle</button>
 </section>
 
@@ -1152,7 +1195,10 @@ function drawDay(){
     ?filtered.map(cardHTML).join('')
     :'<div class="empty">Bu kriterlere uygun rezervasyon bulunamadı.</div>';
 
+  /* FİLTRELENMİŞ REZERVASYON VE TOPLAM PAX SAYILARI */
+  $('totalReservations').textContent=filtered.length;
   $('totalPax').textContent=paxOf(filtered);
+
   attachCardEvents($('items'));
 }
 
