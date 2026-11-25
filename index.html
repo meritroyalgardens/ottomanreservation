@@ -5,11 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ottoman Rezervasyon">
+<meta name="apple-mobile-web-app-title" content="Ottoman Kebap House">
 <meta name="theme-color" content="#14263F">
+<meta name="description" content="Ottoman Kebap House Rezervasyon Paneli">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>Ottoman Kebab House | Reservation</title>
+<title>Ottoman Kebap House | Rezervasyon Paneli</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <style>
@@ -56,7 +57,10 @@ header{
   display:grid;place-items:center;font-size:21px;font-weight:900;
 }
 .brand h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.2px}
-.brand small{display:block;color:#BFCBDA;font-size:11px;margin-top:3px;letter-spacing:1.3px}
+.brand small{
+  display:block;color:#D8C39F;font-size:11px;
+  margin-top:4px;letter-spacing:1px;font-weight:750;
+}
 .header-right{display:flex;align-items:center;gap:8px}
 .header-btn{
   border:1px solid #ffffff40;background:#ffffff12;color:white;
@@ -196,7 +200,7 @@ textarea{resize:vertical}
 .login-logo{text-align:center;margin-bottom:22px}
 .login-logo .brand-mark{margin:0 auto 12px;width:58px;height:58px;font-size:27px}
 .login-logo h2{margin:0;font-size:21px}
-.login-logo p{color:var(--muted);font-size:12px;letter-spacing:1px}
+.login-logo p{color:var(--gold);font-size:12px;letter-spacing:1px;font-weight:800}
 .login-card{padding:23px}
 .small-muted{font-size:11px;color:var(--muted);line-height:1.5}
 @media(min-width:650px){
@@ -222,8 +226,8 @@ textarea{resize:vertical}
   <div class="brand">
     <div class="brand-mark">O</div>
     <div>
-      <h1>Ottoman Kebab House</h1>
-      <small>RESERVATION MANAGEMENT</small>
+      <h1>Ottoman Kebap House</h1>
+      <small>Rezervasyon Paneli</small>
     </div>
   </div>
   <div class="header-right">
@@ -237,7 +241,7 @@ textarea{resize:vertical}
   <div class="login-logo">
     <div class="brand-mark">O</div>
     <h2>Hoş Geldiniz</h2>
-    <p>RESERVATION PANEL</p>
+    <p>REZERVASYON PANELİ</p>
   </div>
   <div class="card login-card">
     <label>E-posta adresi</label>
@@ -307,7 +311,7 @@ textarea{resize:vertical}
     <button class="nav-tab" data-go="report">Personel Raporu</button>
   </div>
 
-  <h2 class="page-title">Rezervasyon Yönetimi</h2>
+  <h2 class="page-title">Rezervasyonlar</h2>
   <p class="page-subtitle">Takvimden gün seçin veya rezervasyonları arayın.</p>
 
   <div class="card">
@@ -531,7 +535,7 @@ document.addEventListener('click', e => {
   if (g) go(g.dataset.go);
 });
 
-/* SERVICE WORKER */
+/* SERVICE WORKER - OTOMATIK GUNCELLEME */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloading) return;
@@ -539,17 +543,28 @@ if ('serviceWorker' in navigator) {
     location.reload();
   });
 
-  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
-    .then(async registration => {
-      swReg = registration;
-      await registration.update().catch(()=>{});
-      await checkPushState();
-    })
-    .catch(error => console.error('Service Worker:',error));
+  window.addEventListener('load', async () => {
+    try {
+      swReg = await navigator.serviceWorker.register('./sw.js', {
+        updateViaCache: 'none'
+      });
 
-  document.addEventListener('visibilitychange',()=>{
+      await swReg.update().catch(() => {});
+      await checkPushState();
+
+      // Uygulama açıkken beş dakikada bir yeni sürümü kontrol et.
+      setInterval(() => {
+        if (swReg) swReg.update().catch(() => {});
+      }, 5 * 60 * 1000);
+
+    } catch (error) {
+      console.error('Service Worker:', error);
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && swReg) {
-      swReg.update().catch(()=>{});
+      swReg.update().catch(() => {});
     }
   });
 }
@@ -614,8 +629,8 @@ $('pushBtn').onclick = async () => {
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
-        userVisibleOnly:true,
-        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
       });
     }
 
@@ -624,25 +639,25 @@ $('pushBtn').onclick = async () => {
     if (!p256dh || !auth) throw new Error('Abonelik anahtarları okunamadı.');
 
     const {error} = await sb.from('push_subscriptions').upsert({
-      user_id:user.id,
-      endpoint:subscription.endpoint,
-      p256dh:b64Url(p256dh),
-      auth:b64Url(auth)
-    },{onConflict:'endpoint'});
+      user_id: user.id,
+      endpoint: subscription.endpoint,
+      p256dh: b64Url(p256dh),
+      auth: b64Url(auth)
+    }, {onConflict: 'endpoint'});
 
     if (error) throw error;
 
-    await registration.showNotification('Ottoman Kebab House',{
-      body:'Bu cihazın bildirim kurulumu tamamlandı.',
-      icon:'./icon-192.png',
-      tag:'ottoman-setup-test'
+    await registration.showNotification('Ottoman Kebap House', {
+      body: 'Bu cihazın bildirim kurulumu tamamlandı.',
+      icon: './icon-192.png',
+      tag: 'ottoman-setup-test'
     });
 
     toast('Bildirim kurulumu tamamlandı!');
     await checkPushState();
   } catch(error) {
-    console.error('Push setup:',error);
-    toast('Bildirim kurulamadı: '+(error.message || error));
+    console.error('Push setup:', error);
+    toast('Bildirim kurulamadı: ' + (error.message || error));
   } finally {
     btn.disabled = false;
   }
@@ -652,15 +667,15 @@ $('pushBtn').onclick = async () => {
 $('loginBtn').onclick = async () => {
   $('loginErr').textContent = '';
   const {error} = await sb.auth.signInWithPassword({
-    email:$('email').value.trim(),
-    password:$('pass').value
+    email: $('email').value.trim(),
+    password: $('pass').value
   });
   if (error) $('loginErr').textContent = 'E-posta veya şifre hatalı.';
 };
 
 $('logout').onclick = () => sb.auth.signOut();
 
-sb.auth.onAuthStateChange((event,session)=>{
+sb.auth.onAuthStateChange((event,session) => {
   if (['INITIAL_SESSION','SIGNED_IN','SIGNED_OUT'].includes(event)) {
     setUser(session?.user || null);
   }
@@ -684,15 +699,17 @@ function setUser(u) {
     'Merhaba, ' + (u.user_metadata?.display_name || u.email);
 
   chan = sb.channel('rez')
-    .on('postgres_changes',{
-      event:'*',schema:'public',table:'reservations'
-    },payload=>{
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reservations'
+    }, payload => {
       if (payload.eventType === 'INSERT') {
         const r = payload.new;
         beep();
         toast(
-          'Yeni rezervasyon: '+r.first_name+' '+r.last_name+
-          ' • '+formatDate(r.res_date)+' • '+hhmm(r.res_time)
+          'Yeni rezervasyon: ' + r.first_name + ' ' + r.last_name +
+          ' • ' + formatDate(r.res_date) + ' • ' + hhmm(r.res_time)
         );
       }
       if (!$('vList').classList.contains('hidden')) loadMonth();
@@ -707,39 +724,39 @@ function setUser(u) {
 /* DATA */
 async function fetchAll() {
   const {data,error} = await sb.from('reservations').select('*')
-    .order('res_date',{ascending:true})
-    .order('res_time',{ascending:true});
+    .order('res_date', {ascending: true})
+    .order('res_time', {ascending: true});
   if (error) {
-    toast('Veriler alınamadı: '+error.message);
+    toast('Veriler alınamadı: ' + error.message);
     return [];
   }
   return data || [];
 }
 
 async function refreshHome() {
-  $('todayLabel').textContent = new Date().toLocaleDateString('tr-TR',{
-    weekday:'long',day:'numeric',month:'long',year:'numeric'
+  $('todayLabel').textContent = new Date().toLocaleDateString('tr-TR', {
+    weekday: 'long',day: 'numeric',month: 'long',year: 'numeric'
   });
 
   const all = await fetchAll();
-  const today = all.filter(r=>r.res_date===todayStr() && active(r));
+  const today = all.filter(r => r.res_date === todayStr() && active(r));
   const monthPrefix = todayStr().slice(0,7);
-  const thisMonth = all.filter(r=>r.res_date?.slice(0,7)===monthPrefix && active(r));
-  const pending = all.filter(r=>
+  const thisMonth = all.filter(r => r.res_date?.slice(0,7) === monthPrefix && active(r));
+  const pending = all.filter(r =>
     r.res_date >= todayStr() &&
     (r.status || 'confirmed') === 'confirmed'
   );
 
   $('statToday').textContent = today.length;
   $('statPax').textContent = paxOf(today);
-  $('statTodayPax').textContent = paxOf(today)+' misafir';
+  $('statTodayPax').textContent = paxOf(today) + ' misafir';
   $('statMonth').textContent = thisMonth.length;
-  $('statMonthPax').textContent = paxOf(thisMonth)+' misafir';
+  $('statMonthPax').textContent = paxOf(thisMonth) + ' misafir';
   $('statPending').textContent = pending.length;
 
   $('todayItems').innerHTML = today.length
-    ? today.sort((a,b)=>hhmm(a.res_time).localeCompare(hhmm(b.res_time)))
-      .map(r=>miniCard(r)).join('')
+    ? today.sort((a,b) => hhmm(a.res_time).localeCompare(hhmm(b.res_time)))
+      .map(r => miniCard(r)).join('')
     : '<div class="empty">Bugün için rezervasyon bulunmuyor.</div>';
 
   attachCardEvents($('todayItems'));
@@ -758,32 +775,32 @@ function miniCard(r) {
 
 /* CALENDAR */
 $('dows').innerHTML = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']
-  .map(d=>`<div class="dow">${d}</div>`).join('');
+  .map(d => `<div class="dow">${d}</div>`).join('');
 
-$('prev').onclick = ()=>{
+$('prev').onclick = () => {
   month.setMonth(month.getMonth()-1);
   loadMonth();
 };
-$('next').onclick = ()=>{
+$('next').onclick = () => {
   month.setMonth(month.getMonth()+1);
   loadMonth();
 };
 
 async function loadMonth() {
-  const y=month.getFullYear(), m=month.getMonth();
-  const last=new Date(y,m+1,0).getDate();
+  const y = month.getFullYear(), m = month.getMonth();
+  const last = new Date(y,m+1,0).getDate();
 
-  const {data,error}=await sb.from('reservations').select('*')
-    .gte('res_date',ymd(y,m,1))
-    .lte('res_date',ymd(y,m,last))
+  const {data,error} = await sb.from('reservations').select('*')
+    .gte('res_date', ymd(y,m,1))
+    .lte('res_date', ymd(y,m,last))
     .order('res_time');
 
-  rows=error ? [] : (data || []);
-  if (error) toast('Takvim yüklenemedi: '+error.message);
+  rows = error ? [] : (data || []);
+  if (error) toast('Takvim yüklenemedi: ' + error.message);
 
-  if (!selDate || selDate.slice(0,7)!==ymd(y,m,1).slice(0,7)) {
-    const today=todayStr();
-    selDate=today.slice(0,7)===ymd(y,m,1).slice(0,7) ? today : ymd(y,m,1);
+  if (!selDate || selDate.slice(0,7) !== ymd(y,m,1).slice(0,7)) {
+    const today = todayStr();
+    selDate = today.slice(0,7) === ymd(y,m,1).slice(0,7) ? today : ymd(y,m,1);
   }
 
   drawCal();
@@ -791,37 +808,37 @@ async function loadMonth() {
 }
 
 function drawCal() {
-  const y=month.getFullYear(),m=month.getMonth();
-  const last=new Date(y,m+1,0).getDate();
+  const y = month.getFullYear(), m = month.getMonth();
+  const last = new Date(y,m+1,0).getDate();
 
-  $('monthLbl').textContent=month.toLocaleDateString('tr-TR',{
-    month:'long',year:'numeric'
+  $('monthLbl').textContent = month.toLocaleDateString('tr-TR', {
+    month: 'long',year: 'numeric'
   });
 
-  const lead=(new Date(y,m,1).getDay()+6)%7;
-  const sums={};
+  const lead = (new Date(y,m,1).getDay()+6)%7;
+  const sums = {};
 
-  rows.filter(active).forEach(r=>{
-    sums[r.res_date]=(sums[r.res_date]||0)+(Number(r.guests)||0);
+  rows.filter(active).forEach(r => {
+    sums[r.res_date] = (sums[r.res_date] || 0) + (Number(r.guests)||0);
   });
 
-  let html='<div></div>'.repeat(lead);
+  let html = '<div></div>'.repeat(lead);
 
-  for(let d=1;d<=last;d++){
-    const date=ymd(y,m,d);
-    const off=isMon(date);
-    html+=`
+  for (let d=1;d<=last;d++) {
+    const date = ymd(y,m,d);
+    const off = isMon(date);
+    html += `
       <button class="day${off?' off':''}${date===todayStr()?' today':''}${date===selDate?' sel':''}"
         data-d="${date}" ${off?'disabled':''}>
         <span>${d}</span><i>${sums[date]||''}</i>
       </button>`;
   }
 
-  $('cal').innerHTML=html;
-  $('cal').querySelectorAll('.day:not(.off)').forEach(button=>{
-    button.onclick=()=>{
-      selDate=button.dataset.d;
-      $('dateFilter').value='day';
+  $('cal').innerHTML = html;
+  $('cal').querySelectorAll('.day:not(.off)').forEach(button => {
+    button.onclick = () => {
+      selDate = button.dataset.d;
+      $('dateFilter').value = 'day';
       drawCal();
       drawDay();
     };
@@ -830,47 +847,47 @@ function drawCal() {
 
 /* RESERVATION LIST */
 function getFilteredRows() {
-  const search=$('searchBox').value.trim().toLocaleLowerCase('tr-TR');
-  const status=$('statusFilter').value;
-  const dateMode=$('dateFilter').value;
+  const search = $('searchBox').value.trim().toLocaleLowerCase('tr-TR');
+  const status = $('statusFilter').value;
+  const dateMode = $('dateFilter').value;
 
-  return rows.filter(r=>{
-    if (dateMode==='day' && r.res_date!==selDate) return false;
-    if (dateMode==='month' && r.res_date?.slice(0,7)!==selDate?.slice(0,7)) return false;
-    if (status!=='all' && (r.status || 'confirmed')!==status) return false;
+  return rows.filter(r => {
+    if (dateMode === 'day' && r.res_date !== selDate) return false;
+    if (dateMode === 'month' && r.res_date?.slice(0,7) !== selDate?.slice(0,7)) return false;
+    if (status !== 'all' && (r.status || 'confirmed') !== status) return false;
 
     if (search) {
-      const hay=[r.first_name,r.last_name,r.phone,r.taken_by,r.note]
+      const hay = [r.first_name,r.last_name,r.phone,r.taken_by,r.note]
         .join(' ').toLocaleLowerCase('tr-TR');
       if (!hay.includes(search)) return false;
     }
     return true;
-  }).sort((a,b)=>
+  }).sort((a,b) =>
     (a.res_date+' '+hhmm(a.res_time)).localeCompare(b.res_date+' '+hhmm(b.res_time))
   );
 }
 
 function drawDay() {
-  const list=getFilteredRows();
+  const list = getFilteredRows();
 
-  $('dayLbl').textContent=$('dateFilter').value==='day'
-    ? new Date(selDate+'T12:00:00').toLocaleDateString('tr-TR',{
-        day:'numeric',month:'long',weekday:'long'
+  $('dayLbl').textContent = $('dateFilter').value === 'day'
+    ? new Date(selDate+'T12:00:00').toLocaleDateString('tr-TR', {
+        day: 'numeric',month: 'long',weekday: 'long'
       })
     : 'Rezervasyon sonuçları';
 
-  $('items').innerHTML=list.length
+  $('items').innerHTML = list.length
     ? list.map(cardHTML).join('')
     : '<div class="card empty">Aradığınız kriterlere uygun rezervasyon bulunamadı.</div>';
 
-  $('totalPax').textContent=paxOf(list.filter(active));
+  $('totalPax').textContent = paxOf(list.filter(active));
   attachCardEvents($('items'));
 }
 
 function cardHTML(r) {
-  const status=r.status || 'confirmed';
-  const phone=String(r.phone||'').replace(/[^\d+]/g,'');
-  const wa=String(r.phone||'').replace(/\D/g,'');
+  const status = r.status || 'confirmed';
+  const phone = String(r.phone||'').replace(/[^\d+]/g,'');
+  const wa = String(r.phone||'').replace(/\D/g,'');
 
   return `
     <article class="res-item">
@@ -901,12 +918,12 @@ function cardHTML(r) {
 }
 
 function attachCardEvents(container) {
-  container.querySelectorAll('[data-status-id]').forEach(select=>{
-    select.onchange=async()=>{
-      const {error}=await sb.from('reservations')
-        .update({status:select.value}).eq('id',select.dataset.statusId);
+  container.querySelectorAll('[data-status-id]').forEach(select => {
+    select.onchange = async () => {
+      const {error} = await sb.from('reservations')
+        .update({status: select.value}).eq('id',select.dataset.statusId);
       if (error) {
-        toast('Durum güncellenemedi: '+error.message);
+        toast('Durum güncellenemedi: ' + error.message);
         return;
       }
       toast('Rezervasyon durumu güncellendi.');
@@ -915,26 +932,26 @@ function attachCardEvents(container) {
     };
   });
 
-  container.querySelectorAll('[data-wa]').forEach(button=>{
-    button.onclick=()=>{
+  container.querySelectorAll('[data-wa]').forEach(button => {
+    button.onclick = () => {
       window.open('https://wa.me/'+button.dataset.wa,'_blank');
     };
   });
 
-  container.querySelectorAll('[data-edit]').forEach(button=>{
-    button.onclick=()=>{
-      const record=rows.find(r=>String(r.id)===String(button.dataset.edit));
+  container.querySelectorAll('[data-edit]').forEach(button => {
+    button.onclick = () => {
+      const record = rows.find(r => String(r.id) === String(button.dataset.edit));
       if (record) startEdit(record);
     };
   });
 
-  container.querySelectorAll('[data-delete]').forEach(button=>{
-    button.onclick=async()=>{
+  container.querySelectorAll('[data-delete]').forEach(button => {
+    button.onclick = async () => {
       if (!confirm('Bu rezervasyonu kalıcı olarak silmek istiyor musunuz?')) return;
-      const {error}=await sb.from('reservations')
+      const {error} = await sb.from('reservations')
         .delete().eq('id',button.dataset.delete);
       if (error) {
-        toast('Silinemedi: '+error.message);
+        toast('Silinemedi: ' + error.message);
         return;
       }
       toast('Rezervasyon silindi.');
@@ -944,134 +961,134 @@ function attachCardEvents(container) {
   });
 }
 
-['searchBox','statusFilter','dateFilter'].forEach(id=>{
-  $(id).addEventListener(id==='searchBox'?'input':'change',drawDay);
+['searchBox','statusFilter','dateFilter'].forEach(id => {
+  $(id).addEventListener(id === 'searchBox' ? 'input' : 'change',drawDay);
 });
 
-$('clearFilters').onclick=()=>{
-  $('searchBox').value='';
-  $('statusFilter').value='all';
-  $('dateFilter').value='day';
+$('clearFilters').onclick = () => {
+  $('searchBox').value = '';
+  $('statusFilter').value = 'all';
+  $('dateFilter').value = 'day';
   drawDay();
 };
 
-$('addForDay').onclick=()=>{
-  editingId=null;
+$('addForDay').onclick = () => {
+  editingId = null;
   go('form');
-  $('fDate').value=selDate;
+  $('fDate').value = selDate;
 };
 
 /* FORM AND EDITING */
 function prepForm() {
-  editingId=null;
+  editingId = null;
   ['fFirst','fLast','fTime','fPhone','fGuests','fNote']
-    .forEach(id=>$(id).value='');
+    .forEach(id => $(id).value = '');
 
-  $('fDate').value=selDate && !isMon(selDate) ? selDate : '';
-  const shared=user?.user_metadata?.shared;
+  $('fDate').value = selDate && !isMon(selDate) ? selDate : '';
+  const shared = user?.user_metadata?.shared;
 
-  $('fTaker').value=shared?'':(user?.user_metadata?.display_name||user?.email||'');
-  $('fTaker').readOnly=!shared;
-  $('fTaker').placeholder=shared?'Adınızı yazın':'';
-  $('formErr').textContent='';
-  $('formTitle').textContent='Yeni Rezervasyon';
-  $('saveBtn').textContent='Rezervasyonu Kaydet';
+  $('fTaker').value = shared ? '' : (user?.user_metadata?.display_name || user?.email || '');
+  $('fTaker').readOnly = !shared;
+  $('fTaker').placeholder = shared ? 'Adınızı yazın' : '';
+  $('formErr').textContent = '';
+  $('formTitle').textContent = 'Yeni Rezervasyon';
+  $('saveBtn').textContent = 'Rezervasyonu Kaydet';
   $('cancelEdit').classList.add('hidden');
 }
 
 function startEdit(r) {
-  editingId=r.id;
-  $('fFirst').value=r.first_name||'';
-  $('fLast').value=r.last_name||'';
-  $('fDate').value=r.res_date||'';
-  $('fTime').value=hhmm(r.res_time);
-  $('fPhone').value=r.phone||'';
-  $('fGuests').value=r.guests||'';
-  $('fTaker').value=r.taken_by||'';
-  $('fNote').value=r.note||'';
-  $('fTaker').readOnly=false;
-  $('formErr').textContent='';
-  $('formTitle').textContent='Rezervasyonu Düzenle';
-  $('saveBtn').textContent='Değişiklikleri Kaydet';
+  editingId = r.id;
+  $('fFirst').value = r.first_name || '';
+  $('fLast').value = r.last_name || '';
+  $('fDate').value = r.res_date || '';
+  $('fTime').value = hhmm(r.res_time);
+  $('fPhone').value = r.phone || '';
+  $('fGuests').value = r.guests || '';
+  $('fTaker').value = r.taken_by || '';
+  $('fNote').value = r.note || '';
+  $('fTaker').readOnly = false;
+  $('formErr').textContent = '';
+  $('formTitle').textContent = 'Rezervasyonu Düzenle';
+  $('saveBtn').textContent = 'Değişiklikleri Kaydet';
   $('cancelEdit').classList.remove('hidden');
   go('form');
 }
 
-$('cancelEdit').onclick=()=>{
-  editingId=null;
+$('cancelEdit').onclick = () => {
+  editingId = null;
   go('list');
 };
 
-$('saveBtn').onclick=async()=>{
-  const value=id=>$(id).value.trim();
-  const fail=message=>{$('formErr').textContent=message;};
+$('saveBtn').onclick = async () => {
+  const value = id => $(id).value.trim();
+  const fail = message => {$('formErr').textContent = message;};
 
-  if (!value('fFirst')||!value('fLast')||!value('fDate')||
-      !value('fTime')||!value('fPhone')||!value('fGuests')||
+  if (!value('fFirst') || !value('fLast') || !value('fDate') ||
+      !value('fTime') || !value('fPhone') || !value('fGuests') ||
       !value('fTaker')) {
     return fail('Not hariç tüm alanları doldurun.');
   }
 
   if (isMon(value('fDate'))) return fail('Pazartesi günleri kapalıdır.');
-  if (+value('fGuests')<1) return fail('Misafir sayısı en az 1 olmalıdır.');
+  if (+value('fGuests') < 1) return fail('Misafir sayısı en az 1 olmalıdır.');
 
-  const payload={
-    first_name:value('fFirst'),
-    last_name:value('fLast'),
-    res_date:value('fDate'),
-    res_time:value('fTime'),
-    phone:value('fPhone'),
-    guests:+value('fGuests'),
-    taken_by:value('fTaker'),
-    note:value('fNote')||null
+  const payload = {
+    first_name: value('fFirst'),
+    last_name: value('fLast'),
+    res_date: value('fDate'),
+    res_time: value('fTime'),
+    phone: value('fPhone'),
+    guests: +value('fGuests'),
+    taken_by: value('fTaker'),
+    note: value('fNote') || null
   };
 
-  $('saveBtn').disabled=true;
+  $('saveBtn').disabled = true;
 
   try {
     let result;
 
     if (editingId) {
-      result=await sb.from('reservations').update(payload).eq('id',editingId);
+      result = await sb.from('reservations').update(payload).eq('id',editingId);
     } else {
-      result=await sb.from('reservations').insert(payload);
+      result = await sb.from('reservations').insert(payload);
     }
 
     if (result.error) throw result.error;
 
-    selDate=value('fDate');
-    month=new Date(selDate+'T12:00:00');
+    selDate = value('fDate');
+    month = new Date(selDate+'T12:00:00');
     month.setDate(1);
-    editingId=null;
+    editingId = null;
 
     toast('Rezervasyon başarıyla kaydedildi.');
     go('list');
 
   } catch(error) {
-    fail('Kaydedilemedi: '+(error.message||error));
+    fail('Kaydedilemedi: ' + (error.message || error));
   } finally {
-    $('saveBtn').disabled=false;
+    $('saveBtn').disabled = false;
   }
 };
 
 /* STAFF REPORT */
 async function drawReport() {
-  const all=await fetchAll();
-  const period=$('reportPeriod').value;
-  const filtered=all.filter(r=>
-    active(r) && (period==='all' || r.res_date?.slice(0,7)===todayStr().slice(0,7))
+  const all = await fetchAll();
+  const period = $('reportPeriod').value;
+  const filtered = all.filter(r =>
+    active(r) && (period === 'all' || r.res_date?.slice(0,7) === todayStr().slice(0,7))
   );
 
-  const staff={};
-  filtered.forEach(r=>{
-    const name=String(r.taken_by||'Belirtilmemiş').trim();
-    if (!staff[name]) staff[name]={count:0,pax:0};
+  const staff = {};
+  filtered.forEach(r => {
+    const name = String(r.taken_by || 'Belirtilmemiş').trim();
+    if (!staff[name]) staff[name] = {count:0,pax:0};
     staff[name].count++;
-    staff[name].pax+=Number(r.guests)||0;
+    staff[name].pax += Number(r.guests)||0;
   });
 
-  const sorted=Object.entries(staff).sort((a,b)=>b[1].count-a[1].count);
-  $('reportStats').innerHTML=`
+  const sorted = Object.entries(staff).sort((a,b) => b[1].count-a[1].count);
+  $('reportStats').innerHTML = `
     <div class="stats">
       <div class="stat">
         <div class="stat-number">${filtered.length}</div>
@@ -1083,8 +1100,8 @@ async function drawReport() {
       </div>
     </div>`;
 
-  $('staffRows').innerHTML=sorted.length
-    ? sorted.map(([name,data],i)=>`
+  $('staffRows').innerHTML = sorted.length
+    ? sorted.map(([name,data],i) => `
       <div class="report-row">
         <div>
           <div class="report-name">${i+1}. ${esc(name)}</div>
@@ -1095,16 +1112,16 @@ async function drawReport() {
     : '<div class="empty">Bu dönemde personel kaydı bulunamadı.</div>';
 }
 
-$('reportPeriod').onchange=drawReport;
+$('reportPeriod').onchange = drawReport;
 
 /* CSV EXPORT - EXCEL UYUMLU */
 function downloadCSV(data,filename) {
-  const headers=[
+  const headers = [
     'Tarih','Saat','Ad','Soyad','Telefon','Pax',
     'Rezervasyonu Alan','Not','Durum','Sisteme Giriş'
   ];
 
-  const rowsCSV=data.map(r=>[
+  const rowsCSV = data.map(r => [
     formatDate(r.res_date),
     hhmm(r.res_time),
     r.first_name,
@@ -1117,45 +1134,46 @@ function downloadCSV(data,filename) {
     entered(r.created_at)
   ]);
 
-  const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
-  const csv='\uFEFF'+[headers,...rowsCSV].map(row=>row.map(quote).join(';')).join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=filename;
+  const quote = value => '"' + String(value??'').replace(/"/g,'""') + '"';
+  const csv = '\uFEFF' + [headers,...rowsCSV].map(row => row.map(quote).join(';')).join('\r\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url),1000);
   toast('Rapor indirildi.');
 }
 
 async function exportAll() {
-  const all=await fetchAll();
-  downloadCSV(all,'ottoman-rezervasyonlar-'+todayStr()+'.csv');
+  const all = await fetchAll();
+  downloadCSV(all,'ottoman-kebap-rezervasyonlar-'+todayStr()+'.csv');
 }
 
-$('exportHome').onclick=exportAll;
-$('exportReport').onclick=async()=>{
-  const all=await fetchAll();
-  const period=$('reportPeriod').value;
-  const filtered=all.filter(r=>
-    active(r) && (period==='all' || r.res_date?.slice(0,7)===todayStr().slice(0,7))
+$('exportHome').onclick = exportAll;
+$('exportReport').onclick = async () => {
+  const all = await fetchAll();
+  const period = $('reportPeriod').value;
+  const filtered = all.filter(r =>
+    active(r) && (period === 'all' || r.res_date?.slice(0,7) === todayStr().slice(0,7))
   );
-  downloadCSV(filtered,'ottoman-personel-raporu-'+todayStr()+'.csv');
+  downloadCSV(filtered,'ottoman-kebap-personel-raporu-'+todayStr()+'.csv');
 };
 
 /* START */
-selDate=todayStr();
-showInitial();
+selDate = todayStr();
 
 function showInitial() {
-  sb.auth.getSession().then(({data})=>{
+  sb.auth.getSession().then(({data}) => {
     if (data?.session?.user) setUser(data.session.user);
     else go('login');
-  });
+  }).catch(() => go('login'));
 }
+
+showInitial();
 </script>
 </body>
 </html>
