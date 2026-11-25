@@ -406,7 +406,6 @@ textarea{resize:vertical}
     <button class="btn btn-outline btn-block" id="clearFilters">Filtreleri Temizle</button>
   </div>
 
-  <!-- FİLTRELENMİŞ REZERVASYON VE PAX ÖZETİ -->
   <div class="list-summary">
     <div class="list-summary-item">
       <div class="list-summary-label">Gösterilen rezervasyon</div>
@@ -652,6 +651,17 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({
 }[c]));
 const active=r=>(r.status||'confirmed')!=='cancelled';
 const paxOf=list=>list.reduce((n,r)=>n+(Number(r.guests)||0),0);
+
+/* PERSONEL İSİMLERİNİ STANDARTLAŞTIR */
+function normalizeStaffName(name){
+  return String(name||'')
+    .trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ı/g,'i')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
 
 function isOverdue(r){
   if((r.status||'confirmed')!=='confirmed')return false;
@@ -914,7 +924,6 @@ function setUser(u){
       const r=payload.new;
       beep();
 
-      /* Bildirim metninde teknik PAX kodu kullanılmaz */
       const cleanNote=visibleNote(r.note);
 
       let notificationText=
@@ -1195,7 +1204,6 @@ function drawDay(){
     ?filtered.map(cardHTML).join('')
     :'<div class="empty">Bu kriterlere uygun rezervasyon bulunamadı.</div>';
 
-  /* FİLTRELENMİŞ REZERVASYON VE TOPLAM PAX SAYILARI */
   $('totalReservations').textContent=filtered.length;
   $('totalPax').textContent=paxOf(filtered);
 
@@ -1392,15 +1400,28 @@ async function drawReport(){
   const staff={};
 
   filtered.forEach(r=>{
-    const name=String(r.taken_by||'Belirtilmemiş').trim();
+    const originalName=String(r.taken_by||'').trim()||'Belirtilmemiş';
 
-    if(!staff[name])staff[name]={count:0,pax:0};
+    /*
+      Aynı personelin farklı yazılışlarını tek anahtarda birleştirir.
+      Örnek:
+      dogan = doğan = Doğan = DOĞAN
+    */
+    const normalizedName=normalizeStaffName(originalName)||'belirtilmemiş';
 
-    staff[name].count++;
-    staff[name].pax+=Number(r.guests)||0;
+    if(!staff[normalizedName]){
+      staff[normalizedName]={
+        displayName:originalName,
+        count:0,
+        pax:0
+      };
+    }
+
+    staff[normalizedName].count++;
+    staff[normalizedName].pax+=Number(r.guests)||0;
   });
 
-  const sorted=Object.entries(staff).sort((a,b)=>b[1].count-a[1].count);
+  const sorted=Object.values(staff).sort((a,b)=>b.count-a.count);
 
   $('monthPickerWrap').classList.toggle('hidden',$('reportMode').value==='all');
 
@@ -1417,10 +1438,10 @@ async function drawReport(){
     </div>`;
 
   $('staffRows').innerHTML=sorted.length
-    ?sorted.map(([name,data],i)=>`
+    ?sorted.map((data,i)=>`
       <div class="report-row">
         <div>
-          <div class="report-name">${i+1}. ${esc(name)}</div>
+          <div class="report-name">${i+1}. ${esc(data.displayName)}</div>
           <div class="small-muted">${data.pax} misafir</div>
         </div>
         <div class="report-count">${data.count} rezervasyon</div>
