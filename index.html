@@ -120,11 +120,25 @@ const VAPID_PUBLIC='BBtX4eAJDu6gWidYpHT5BR43uNlzjuiPuJ17YXOFkmFet4UiE4ltlxLLJqsn
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const TZ='Europe/Nicosia';
-let user=null,month=new Date(),selDate=null,rows=[],chan=null,swReg=null;
+let user=null,month=new Date(),selDate=null,rows=[],chan=null,swReg=null,reloading=false;
 month.setDate(1);
 
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(r=>{swReg=r;checkPushState()}).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloading)return;
+    reloading=true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>{
+    swReg=r;
+    r.update().catch(()=>{});
+    checkPushState();
+  }).catch(()=>{});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'&&swReg){
+      swReg.update().catch(()=>{});
+    }
+  });
 }
 
 const pad=n=>String(n).padStart(2,'0');
