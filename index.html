@@ -1,123 +1,421 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Rezervasyon">
-<meta name="theme-color" content="#12263F">
+<meta name="apple-mobile-web-app-title" content="Ottoman Rezervasyon">
+<meta name="theme-color" content="#14263F">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>Ottoman Kebab House - Reservation Panel</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<title>Ottoman Kebab House | Reservation</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <style>
-:root{--navy:#12263F;--teal:#1F7F82;--ember:#C2452D;--bg:#EDF0F2;--card:#fff;--ink:#17212b;--mute:#667584;--line:#d7dde2}
+:root{
+  --navy:#14263F;
+  --navy2:#203A59;
+  --gold:#C49A54;
+  --bg:#F3F5F8;
+  --card:#FFFFFF;
+  --ink:#19283A;
+  --muted:#7A8797;
+  --line:#E5EAF0;
+  --green:#16845B;
+  --red:#D84B4B;
+  --orange:#D58A35;
+  --blue:#3977C5;
+  --shadow:0 5px 20px rgba(24,43,66,.055);
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:env(safe-area-inset-bottom)}
-header{background:var(--navy);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;display:flex;justify-content:space-between;align-items:center}
-header h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.2px}
-header small{display:block;opacity:.7;font-weight:400;font-size:13px}
-header button{background:none;border:1px solid #ffffff55;color:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px}
-main{max-width:640px;margin:0 auto;padding:16px}
+body{
+  margin:0;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  padding-bottom:30px;
+}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
 .hidden{display:none!important}
-.btn{display:block;width:100%;border:0;border-radius:12px;padding:16px;font:inherit;font-size:17px;font-weight:600;background:var(--teal);color:#fff;margin-bottom:12px;cursor:pointer}
-.btn.alt{background:var(--navy)}
-.btn.push{background:#fff;color:var(--navy);border:1px solid var(--line);font-size:15px;padding:13px}
-.btn.push.on{background:#e6f4ea;color:#137333;border-color:#ceead6}
-.btn.ghost{background:none;color:var(--navy);border:1px solid var(--line);font-size:15px;padding:10px;width:auto;display:inline-block;margin:0 0 12px}
-label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
-input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:#fff}
-.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px}
-.err{color:var(--ember);font-size:14px;min-height:18px;margin-top:8px}
-.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.calhead b{font-size:18px;text-transform:capitalize}
-.calhead button{background:var(--bg);border:0;border-radius:8px;width:40px;height:36px;font-size:18px}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.dow{font-size:12px;color:var(--mute);text-align:center;padding:4px 0}
-.day{aspect-ratio:1/1.05;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:15px;padding:3px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
-.day i{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:var(--teal);border-radius:6px;padding:0 5px;min-height:15px}
-.day i:empty{visibility:hidden}
-.day.off{background:#e3e6e9;color:#9aa5af;border-style:dashed}
-.day.today{border:2px solid var(--ember)}
-.day.sel{background:var(--navy);color:#fff;border-color:var(--navy)}
-.day.sel i{background:#fff;color:var(--navy)}
-.item{border-left:5px solid var(--teal);background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px}
-.item .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.item .nm{font-weight:800;font-size:18px}
-.item .tm{font-weight:800;font-size:20px;color:var(--teal)}
-.item .meta{font-size:14px;color:var(--mute);margin-top:4px;line-height:1.5}
-.item .meta b{color:var(--ink)}
-.item .row{display:flex;gap:12px;align-items:center;margin-top:6px;font-size:14px}
-.item a{color:var(--teal);font-weight:600;text-decoration:none}
-.item .del{margin-left:auto;background:none;border:0;color:var(--ember);font:inherit;font-size:14px}
-.total{background:var(--ember);color:#fff;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;font-weight:600}
-.total b{font-size:34px;font-weight:800}
-.empty{color:var(--mute);text-align:center;padding:18px}
-.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--navy);color:#fff;padding:14px;border-radius:12px;text-align:center;z-index:9}
-.hint{font-size:13px;color:var(--mute);background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.45}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1620;--card:#18232f;--ink:#e8edf1;--mute:#93a1ae;--line:#2c3a48}input,textarea,.day,.item{background:#18232f;color:var(--ink)}.day.off{background:#111a23}.day.sel{background:var(--teal)}.calhead button{background:#223142;color:var(--ink)}.btn.push{background:#18232f;color:var(--ink)}}
+header{
+  background:var(--navy);
+  color:white;
+  padding:calc(15px + env(safe-area-inset-top)) 20px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  box-shadow:0 4px 18px #14263f20;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{
+  width:42px;height:42px;border-radius:13px;
+  background:var(--gold);color:var(--navy);
+  display:grid;place-items:center;font-size:21px;font-weight:900;
+}
+.brand h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.2px}
+.brand small{display:block;color:#BFCBDA;font-size:11px;margin-top:3px;letter-spacing:1.3px}
+.header-right{display:flex;align-items:center;gap:8px}
+.header-btn{
+  border:1px solid #ffffff40;background:#ffffff12;color:white;
+  padding:9px 11px;border-radius:10px;font-size:12px;
+}
+main{max-width:1000px;margin:0 auto;padding:20px 16px}
+.page-title{margin:4px 0 4px;font-size:24px;font-weight:800;letter-spacing:-.7px}
+.page-subtitle{color:var(--muted);font-size:13px;margin:0 0 20px}
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:17px;padding:17px;margin-bottom:15px;
+  box-shadow:var(--shadow);
+}
+.section-title{font-size:16px;font-weight:800;margin:0 0 14px}
+.stats{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;margin-bottom:17px;
+}
+.stat{
+  background:white;border:1px solid var(--line);
+  border-radius:15px;padding:15px;box-shadow:var(--shadow);
+  min-width:0;
+}
+.stat-top{display:flex;justify-content:space-between;align-items:center}
+.stat-icon{
+  width:35px;height:35px;border-radius:11px;
+  display:grid;place-items:center;background:#EDF2F8;font-size:17px;
+}
+.stat-number{font-size:27px;font-weight:850;margin-top:12px;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-note{font-size:11px;color:var(--muted);margin-top:7px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{
+  border:0;border-radius:12px;padding:14px 15px;
+  font-weight:750;font-size:14px;display:inline-flex;
+  align-items:center;justify-content:center;gap:7px;
+  transition:.15s;
+}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{background:var(--navy);color:white}
+.btn-gold{background:var(--gold);color:#182A40}
+.btn-light{background:#EDF2F7;color:var(--navy)}
+.btn-outline{background:white;border:1px solid var(--line);color:var(--navy)}
+.btn-danger{background:#FFF0F0;color:var(--red)}
+.btn-small{padding:8px 10px;font-size:12px;border-radius:9px}
+.btn-block{width:100%}
+.push-btn{width:100%;margin-top:12px}
+.push-btn.on{background:#E8F6EE;color:var(--green)}
+.hint{
+  font-size:12px;color:var(--muted);background:#F3F6F9;
+  border-radius:10px;padding:11px;margin-top:10px;line-height:1.5;
+}
+.nav-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:17px}
+.nav-tab{
+  background:white;border:1px solid var(--line);color:var(--muted);
+  border-radius:10px;padding:10px 13px;font-size:12px;font-weight:750;
+}
+.nav-tab.active{background:var(--navy);border-color:var(--navy);color:white}
+label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:13px 0 6px}
+input,textarea,select{
+  width:100%;border:1px solid var(--line);border-radius:11px;
+  padding:12px 13px;background:white;color:var(--ink);
+  font-size:15px;outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #c49a541c}
+textarea{resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.full{grid-column:1/-1}
+.err{color:var(--red);font-size:13px;min-height:18px;margin:9px 0}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.calhead b{font-size:16px;text-transform:capitalize}
+.calhead button{
+  width:36px;height:36px;border:1px solid var(--line);
+  background:white;border-radius:10px;color:var(--navy);font-size:20px;
+}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.dow{text-align:center;color:var(--muted);font-size:11px;font-weight:750;padding:7px 0}
+.day{
+  min-width:0;aspect-ratio:1/1;border:1px solid var(--line);
+  border-radius:10px;background:white;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;font-size:13px;
+}
+.day i{font-style:normal;font-size:9px;color:var(--green);font-weight:850}
+.day.off{background:#EDF0F3;color:#A9B1BA;border-style:dashed}
+.day.today{border:2px solid var(--gold)}
+.day.sel{background:var(--navy);border-color:var(--navy);color:white}
+.day.sel i{color:#E8C987}
+.day:disabled{cursor:not-allowed}
+.filter-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.search{margin-bottom:10px}
+.day-heading{font-size:16px;font-weight:850;margin:20px 2px 12px}
+.res-item{
+  background:white;border:1px solid var(--line);border-radius:15px;
+  padding:14px;margin-bottom:11px;box-shadow:var(--shadow);
+  border-left:4px solid var(--gold);
+}
+.res-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.res-name{font-size:16px;font-weight:850}
+.res-time{font-size:19px;font-weight:850;color:var(--navy);white-space:nowrap}
+.res-meta{color:var(--muted);font-size:12px;line-height:1.7;margin-top:8px}
+.res-meta strong{color:var(--ink)}
+.res-note{
+  margin-top:9px;padding:9px 10px;background:#F7F8FA;
+  border-radius:9px;font-size:12px;line-height:1.5;
+}
+.res-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.status{
+  border:0;border-radius:20px;padding:6px 9px;
+  font-size:10px;font-weight:850;
+}
+.status-confirmed{background:#EAF1FC;color:#356DB5}
+.status-arrived{background:#E5F5EC;color:#16845B}
+.status-noshow{background:#FFF1DE;color:#B8751C}
+.status-cancelled{background:#FDEAEA;color:#C34242}
+.total{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--navy);color:white;padding:16px 18px;border-radius:15px;
+  margin-top:13px;
+}
+.total b{font-size:28px}
+.empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:13px}
+.toast{
+  position:fixed;left:15px;right:15px;bottom:calc(15px + env(safe-area-inset-bottom));
+  background:var(--navy);color:white;padding:14px 16px;
+  border-radius:13px;text-align:center;z-index:99;
+  box-shadow:0 8px 30px #0003;font-size:13px;
+}
+.report-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:1px solid var(--line);gap:10px;
+}
+.report-row:last-child{border:0}
+.report-name{font-size:13px;font-weight:750}
+.report-count{font-size:14px;font-weight:850;color:var(--navy)}
+.login-wrap{max-width:410px;margin:9vh auto 0}
+.login-logo{text-align:center;margin-bottom:22px}
+.login-logo .brand-mark{margin:0 auto 12px;width:58px;height:58px;font-size:27px}
+.login-logo h2{margin:0;font-size:21px}
+.login-logo p{color:var(--muted);font-size:12px;letter-spacing:1px}
+.login-card{padding:23px}
+.small-muted{font-size:11px;color:var(--muted);line-height:1.5}
+@media(min-width:650px){
+  main{padding:26px 22px}
+  .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stat-number{font-size:31px}
+  .day{aspect-ratio:1.25}
+}
+@media(max-width:390px){
+  .brand h1{font-size:14px}
+  .brand small{font-size:9px}
+  .header-btn{font-size:11px;padding:8px}
+  main{padding:15px 11px}
+  .card{padding:13px}
+  .res-actions .btn{flex:1}
+}
 </style>
 </head>
 
 <body>
+
 <header>
-<h1>Ottoman Kebab House<small>Reservation Panel</small></h1>
-<button id="logout" class="hidden">Çıkış</button>
+  <div class="brand">
+    <div class="brand-mark">O</div>
+    <div>
+      <h1>Ottoman Kebab House</h1>
+      <small>RESERVATION MANAGEMENT</small>
+    </div>
+  </div>
+  <div class="header-right">
+    <button id="logout" class="header-btn hidden">Çıkış ↗</button>
+  </div>
 </header>
 
 <main>
 
-<section id="vLogin" class="card hidden">
-<label>E-posta</label>
-<input id="email" type="email" autocomplete="username" autocapitalize="none">
-<label>Şifre</label>
-<input id="pass" type="password" autocomplete="current-password">
-<div class="err" id="loginErr"></div>
-<button class="btn" id="loginBtn" style="margin-top:8px">Giriş yap</button>
+<section id="vLogin" class="login-wrap hidden">
+  <div class="login-logo">
+    <div class="brand-mark">O</div>
+    <h2>Hoş Geldiniz</h2>
+    <p>RESERVATION PANEL</p>
+  </div>
+  <div class="card login-card">
+    <label>E-posta adresi</label>
+    <input id="email" type="email" autocomplete="username" autocapitalize="none" placeholder="E-posta adresiniz">
+    <label>Şifre</label>
+    <input id="pass" type="password" autocomplete="current-password" placeholder="Şifreniz">
+    <div class="err" id="loginErr"></div>
+    <button class="btn btn-primary btn-block" id="loginBtn">Giriş Yap</button>
+  </div>
 </section>
 
 <section id="vHome" class="hidden">
-<p id="hello" style="color:var(--mute);margin:4px 0 16px"></p>
-<button class="btn" data-go="list">Rezervasyonlar</button>
-<button class="btn alt" data-go="form">Rezervasyon Girişi</button>
-<button class="btn push" id="pushBtn">🔔 Kilit Ekranı Bildirimlerini Aç</button>
-<div id="pushHint" class="hint hidden"></div>
+  <p id="hello" class="page-subtitle"></p>
+  <h2 class="page-title">Genel Bakış</h2>
+  <p class="page-subtitle" id="todayLabel"></p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-top"><span class="stat-icon">📅</span></div>
+      <div class="stat-number" id="statToday">0</div>
+      <div class="stat-label">Bugünkü rezervasyon</div>
+      <div class="stat-note" id="statTodayPax">0 misafir</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span class="stat-icon">👥</span></div>
+      <div class="stat-number" id="statPax">0</div>
+      <div class="stat-label">Bugünkü misafir</div>
+      <div class="stat-note">Toplam kişi sayısı</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span class="stat-icon">🗓️</span></div>
+      <div class="stat-number" id="statMonth">0</div>
+      <div class="stat-label">Bu ay rezervasyon</div>
+      <div class="stat-note" id="statMonthPax">0 misafir</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span class="stat-icon">⏳</span></div>
+      <div class="stat-number" id="statPending">0</div>
+      <div class="stat-label">Bekleyen rezervasyon</div>
+      <div class="stat-note">Henüz gelmemiş misafirler</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="section-title">Hızlı İşlemler</h3>
+    <div class="actions">
+      <button class="btn btn-primary" data-go="form">＋ Yeni Rezervasyon</button>
+      <button class="btn btn-light" data-go="list">☷ Rezervasyonlar</button>
+      <button class="btn btn-light" data-go="report">▤ Personel Raporu</button>
+      <button class="btn btn-light" id="exportHome">↓ Excel / CSV</button>
+    </div>
+    <button class="btn btn-outline push-btn" id="pushBtn">🔔 Bildirimleri Aç</button>
+    <div id="pushHint" class="hint hidden"></div>
+  </div>
+
+  <div class="card">
+    <h3 class="section-title">Bugünün Rezervasyonları</h3>
+    <div id="todayItems"></div>
+    <button class="btn btn-light btn-block" data-go="list">Tüm Rezervasyonları Gör</button>
+  </div>
 </section>
 
 <section id="vList" class="hidden">
-<button class="btn ghost" data-go="home">‹ Ana ekran</button>
-<div class="card">
-<div class="calhead">
-<button id="prev">‹</button>
-<b id="monthLbl"></b>
-<button id="next">›</button>
-</div>
-<div class="grid" id="dows"></div>
-<div class="grid" id="cal" style="margin-top:4px"></div>
-<div style="font-size:12px;color:var(--mute);margin-top:8px">Rozet: o günün toplam pax sayısı. Pazartesi kapalı.</div>
-</div>
-<h3 id="dayLbl" style="margin:16px 2px 10px"></h3>
-<div id="items"></div>
-<div class="total"><span>Toplam pax</span><b id="totalPax">0</b></div>
-<button class="btn" id="addForDay" style="margin-top:14px">Bu güne rezervasyon ekle</button>
+  <div class="nav-row">
+    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
+    <button class="nav-tab active">Rezervasyonlar</button>
+    <button class="nav-tab" data-go="report">Personel Raporu</button>
+  </div>
+
+  <h2 class="page-title">Rezervasyon Yönetimi</h2>
+  <p class="page-subtitle">Takvimden gün seçin veya rezervasyonları arayın.</p>
+
+  <div class="card">
+    <div class="calhead">
+      <button id="prev">‹</button>
+      <b id="monthLbl"></b>
+      <button id="next">›</button>
+    </div>
+    <div class="grid" id="dows"></div>
+    <div class="grid" id="cal" style="margin-top:5px"></div>
+    <p class="small-muted">Günlerin altındaki sayı o günün toplam misafir sayısıdır. Pazartesi kapalıdır.</p>
+  </div>
+
+  <div class="card">
+    <h3 class="section-title">Rezervasyon Ara</h3>
+    <input id="searchBox" class="search" placeholder="İsim, soyisim veya telefon ara...">
+    <div class="filter-row">
+      <select id="statusFilter">
+        <option value="all">Tüm durumlar</option>
+        <option value="confirmed">Onaylandı</option>
+        <option value="arrived">Geldi</option>
+        <option value="noshow">Gelmedi</option>
+        <option value="cancelled">İptal edildi</option>
+      </select>
+      <select id="dateFilter">
+        <option value="day">Seçili gün</option>
+        <option value="month">Seçili ay</option>
+        <option value="all">Tüm tarihler</option>
+      </select>
+    </div>
+    <button class="btn btn-outline btn-block" id="clearFilters">Filtreleri Temizle</button>
+  </div>
+
+  <div class="day-heading" id="dayLbl"></div>
+  <div id="items"></div>
+  <div class="total"><span>Gösterilen toplam misafir</span><b id="totalPax">0</b></div>
+  <button class="btn btn-gold btn-block" id="addForDay" style="margin-top:13px">＋ Bu Güne Rezervasyon Ekle</button>
 </section>
 
 <section id="vForm" class="hidden">
-<button class="btn ghost" data-go="home">‹ Ana ekran</button>
-<div class="card">
-<label>Ad</label><input id="fFirst" autocomplete="off">
-<label>Soyad</label><input id="fLast" autocomplete="off">
-<label>Tarih</label><input id="fDate" type="date">
-<label>Saat</label><input id="fTime" type="time">
-<label>Telefon</label><input id="fPhone" type="tel" inputmode="tel">
-<label>Kaç pax</label><input id="fGuests" type="number" min="1" inputmode="numeric">
-<label>Rezervasyonu alan kişi</label><input id="fTaker" autocomplete="off">
-<label>Not (isteğe bağlı)</label><textarea id="fNote" rows="2"></textarea>
-<div class="err" id="formErr"></div>
-<button class="btn" id="saveBtn" style="margin-top:8px">Rezervasyonu kaydet</button>
-</div>
+  <div class="nav-row">
+    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
+    <button class="nav-tab" data-go="list">Rezervasyonlar</button>
+  </div>
+  <h2 class="page-title" id="formTitle">Yeni Rezervasyon</h2>
+  <p class="page-subtitle">Misafir bilgilerini eksiksiz girin.</p>
+  <div class="card">
+    <div class="form-grid">
+      <div>
+        <label>Ad</label>
+        <input id="fFirst" autocomplete="off" placeholder="Misafir adı">
+      </div>
+      <div>
+        <label>Soyad</label>
+        <input id="fLast" autocomplete="off" placeholder="Misafir soyadı">
+      </div>
+      <div>
+        <label>Tarih</label>
+        <input id="fDate" type="date">
+      </div>
+      <div>
+        <label>Saat</label>
+        <input id="fTime" type="time">
+      </div>
+      <div class="full">
+        <label>Telefon</label>
+        <input id="fPhone" type="tel" inputmode="tel" placeholder="Telefon numarası">
+      </div>
+      <div>
+        <label>Misafir sayısı (Pax)</label>
+        <input id="fGuests" type="number" min="1" inputmode="numeric" placeholder="Örn. 4">
+      </div>
+      <div>
+        <label>Rezervasyonu alan</label>
+        <input id="fTaker" autocomplete="off" placeholder="Personel adı">
+      </div>
+      <div class="full">
+        <label>Misafir notu</label>
+        <textarea id="fNote" rows="3" placeholder="Özel istekler, kutlama, alerji vb."></textarea>
+      </div>
+    </div>
+    <div class="err" id="formErr"></div>
+    <button class="btn btn-primary btn-block" id="saveBtn">Rezervasyonu Kaydet</button>
+    <button class="btn btn-light btn-block hidden" id="cancelEdit">Düzenlemeden Vazgeç</button>
+  </div>
+</section>
+
+<section id="vReport" class="hidden">
+  <div class="nav-row">
+    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
+    <button class="nav-tab" data-go="list">Rezervasyonlar</button>
+    <button class="nav-tab active">Personel Raporu</button>
+  </div>
+  <h2 class="page-title">Personel Performansı</h2>
+  <p class="page-subtitle">Rezervasyonları alan personele göre raporlayın.</p>
+  <div class="card">
+    <label>Rapor dönemi</label>
+    <select id="reportPeriod">
+      <option value="month">Bu ay</option>
+      <option value="all">Tüm zamanlar</option>
+    </select>
+    <div id="reportStats" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3 class="section-title">Personel Sıralaması</h3>
+    <div id="staffRows"></div>
+  </div>
+  <button class="btn btn-gold btn-block" id="exportReport">↓ Raporu CSV Olarak İndir</button>
 </section>
 
 </main>
@@ -138,15 +436,23 @@ let rows = [];
 let chan = null;
 let swReg = null;
 let reloading = false;
+let editingId = null;
 
 month.setDate(1);
 
-function toast(t) {
+const STATUS = {
+  confirmed: 'Onaylandı',
+  arrived: 'Geldi',
+  noshow: 'Gelmedi',
+  cancelled: 'İptal edildi'
+};
+
+function toast(message) {
   const d = document.createElement('div');
   d.className = 'toast';
-  d.textContent = t;
+  d.textContent = message;
   document.body.appendChild(d);
-  setTimeout(() => d.remove(), 5000);
+  setTimeout(() => d.remove(), 4500);
 }
 
 function beep() {
@@ -168,32 +474,61 @@ function urlBase64ToUint8Array(b64) {
 
 function b64Url(buf) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 const pad = n => String(n).padStart(2, '0');
-const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const ymd = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
 const todayStr = () => {
   const d = new Date();
   return ymd(d.getFullYear(), d.getMonth(), d.getDate());
 };
 const isMon = s => new Date(s + 'T12:00:00').getDay() === 1;
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
-  '&':'&amp;',
-  '<':'&lt;',
-  '>':'&gt;',
-  '"':'&quot;',
-  "'":'&#39;'
+const hhmm = t => String(t || '').slice(0,5);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
-const hhmm = t => String(t || '').slice(0, 5);
-const entered = iso => new Date(iso).toLocaleString('tr-TR', {
-  timeZone: TZ,
-  day: '2-digit',
-  month: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit'
+const active = r => (r.status || 'confirmed') !== 'cancelled';
+const paxOf = list => list.reduce((n,r)=>n+(Number(r.guests)||0),0);
+
+function entered(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleString('tr-TR',{
+    timeZone:TZ,day:'2-digit',month:'2-digit',
+    hour:'2-digit',minute:'2-digit'
+  });
+}
+
+function formatDate(s) {
+  if (!s) return '';
+  return s.split('-').reverse().join('.');
+}
+
+function statusClass(s) {
+  return 'status status-' + (s || 'confirmed');
+}
+
+function statusOptions(current) {
+  return Object.entries(STATUS).map(([key,label]) =>
+    `<option value="${key}" ${key === (current || 'confirmed') ? 'selected' : ''}>${label}</option>`
+  ).join('');
+}
+
+function go(v) {
+  ['Login','Home','List','Form','Report'].forEach(n => {
+    $('v'+n).classList.toggle('hidden', n.toLowerCase() !== v);
+  });
+  $('logout').classList.toggle('hidden', v === 'login');
+
+  if (v === 'home') refreshHome();
+  if (v === 'list') loadMonth();
+  if (v === 'form' && !editingId) prepForm();
+  if (v === 'report') drawReport();
+}
+
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]');
+  if (g) go(g.dataset.go);
 });
 
 /* SERVICE WORKER */
@@ -204,46 +539,25 @@ if ('serviceWorker' in navigator) {
     location.reload();
   });
 
-  navigator.serviceWorker.register('./sw.js', {
-    updateViaCache: 'none'
-  }).then(async registration => {
-    swReg = registration;
-    await registration.update().catch(() => {});
-    await checkPushState();
-  }).catch(error => {
-    console.error('Service Worker error:', error);
-  });
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
+    .then(async registration => {
+      swReg = registration;
+      await registration.update().catch(()=>{});
+      await checkPushState();
+    })
+    .catch(error => console.error('Service Worker:',error));
 
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange',()=>{
     if (document.visibilityState === 'visible' && swReg) {
-      swReg.update().catch(() => {});
+      swReg.update().catch(()=>{});
     }
   });
 }
-
-/* SCREEN NAVIGATION */
-function show(v) {
-  ['Login', 'Home', 'List', 'Form'].forEach(n => {
-    $('v' + n).classList.toggle('hidden', n.toLowerCase() !== v);
-  });
-
-  $('logout').classList.toggle('hidden', v === 'login');
-
-  if (v === 'home') checkPushState();
-  if (v === 'list') loadMonth();
-  if (v === 'form') prepForm();
-}
-
-document.addEventListener('click', e => {
-  const g = e.target.closest('[data-go]');
-  if (g) show(g.dataset.go);
-});
 
 /* PUSH STATUS */
 async function checkPushState() {
   const btn = $('pushBtn');
   const hint = $('pushHint');
-
   if (!btn || !hint) return;
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -254,8 +568,7 @@ async function checkPushState() {
   if (isIOS && !standalone) {
     btn.classList.add('hidden');
     hint.classList.remove('hidden');
-    hint.textContent =
-      'iPhone bildirimleri için Safari Paylaş menüsünden Ana Ekrana Ekle yapın ve uygulamayı ana ekrandan açın.';
+    hint.textContent = 'iPhone bildirimleri için Safari Paylaş menüsünden Ana Ekrana Ekle yapın ve uygulamayı ana ekrandan açın.';
     return;
   }
 
@@ -271,114 +584,90 @@ async function checkPushState() {
 
   if (Notification.permission === 'granted' && swReg) {
     const sub = await swReg.pushManager.getSubscription();
-
     if (sub) {
-      btn.textContent = '✅ Bu Cihazda Bildirimler Açık';
+      btn.textContent = '✓ Bildirimler Açık';
       btn.classList.add('on');
       return;
     }
   }
 
-  btn.textContent = '🔔 Kilit Ekranı Bildirimlerini Aç';
+  btn.textContent = '🔔 Bildirimleri Aç';
   btn.classList.remove('on');
 }
 
-/* PUSH SUBSCRIPTION */
 $('pushBtn').onclick = async () => {
   const btn = $('pushBtn');
   btn.disabled = true;
 
   try {
     if (!user) throw new Error('Önce sisteme giriş yapın.');
-
-    if (!('serviceWorker' in navigator) ||
-        !('PushManager' in window) ||
-        !('Notification' in window)) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       throw new Error('Bu cihaz Web Push bildirimlerini desteklemiyor.');
     }
 
     const permission = await Notification.requestPermission();
-
-    if (permission !== 'granted') {
-      throw new Error('Bildirim izni verilmedi. Cihaz ayarlarından izin verin.');
-    }
+    if (permission !== 'granted') throw new Error('Bildirim izni verilmedi.');
 
     const registration = await navigator.serviceWorker.ready;
     swReg = registration;
 
     let subscription = await registration.pushManager.getSubscription();
-
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)
       });
     }
 
     const p256dh = subscription.getKey('p256dh');
     const auth = subscription.getKey('auth');
+    if (!p256dh || !auth) throw new Error('Abonelik anahtarları okunamadı.');
 
-    if (!p256dh || !auth) {
-      throw new Error('Abonelik anahtarları okunamadı.');
-    }
-
-    const { error } = await sb
-      .from('push_subscriptions')
-      .upsert({
-        user_id: user.id,
-        endpoint: subscription.endpoint,
-        p256dh: b64Url(p256dh),
-        auth: b64Url(auth)
-      }, {
-        onConflict: 'endpoint'
-      });
+    const {error} = await sb.from('push_subscriptions').upsert({
+      user_id:user.id,
+      endpoint:subscription.endpoint,
+      p256dh:b64Url(p256dh),
+      auth:b64Url(auth)
+    },{onConflict:'endpoint'});
 
     if (error) throw error;
 
-    await registration.showNotification('Ottoman Kebab House', {
-      body: 'Bu cihazın bildirim kurulumu tamamlandı.',
-      icon: './icon-192.png',
-      tag: 'ottoman-setup-test'
+    await registration.showNotification('Ottoman Kebab House',{
+      body:'Bu cihazın bildirim kurulumu tamamlandı.',
+      icon:'./icon-192.png',
+      tag:'ottoman-setup-test'
     });
 
     toast('Bildirim kurulumu tamamlandı!');
     await checkPushState();
-
-  } catch (error) {
-    console.error('Push setup error:', error);
-    toast('Bildirim kurulamadı: ' + (error.message || error));
+  } catch(error) {
+    console.error('Push setup:',error);
+    toast('Bildirim kurulamadı: '+(error.message || error));
   } finally {
     btn.disabled = false;
   }
 };
 
-/* AUTHENTICATION */
+/* AUTH */
 $('loginBtn').onclick = async () => {
   $('loginErr').textContent = '';
-
-  const { error } = await sb.auth.signInWithPassword({
-    email: $('email').value.trim(),
-    password: $('pass').value
+  const {error} = await sb.auth.signInWithPassword({
+    email:$('email').value.trim(),
+    password:$('pass').value
   });
-
   if (error) $('loginErr').textContent = 'E-posta veya şifre hatalı.';
 };
 
 $('logout').onclick = () => sb.auth.signOut();
 
-sb.auth.onAuthStateChange((event, session) => {
-  if (
-    event === 'INITIAL_SESSION' ||
-    event === 'SIGNED_IN' ||
-    event === 'SIGNED_OUT'
-  ) {
+sb.auth.onAuthStateChange((event,session)=>{
+  if (['INITIAL_SESSION','SIGNED_IN','SIGNED_OUT'].includes(event)) {
     setUser(session?.user || null);
   }
 });
 
 function setUser(u) {
   if (u && user && u.id === user.id) return;
-
   user = u;
 
   if (chan) {
@@ -387,79 +676,114 @@ function setUser(u) {
   }
 
   if (!u) {
-    show('login');
+    go('login');
     return;
   }
 
   $('hello').textContent =
-    'Giriş yapan: ' + (u.user_metadata?.display_name || u.email);
+    'Merhaba, ' + (u.user_metadata?.display_name || u.email);
 
   chan = sb.channel('rez')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'reservations'
-    }, payload => {
+    .on('postgres_changes',{
+      event:'*',schema:'public',table:'reservations'
+    },payload=>{
       if (payload.eventType === 'INSERT') {
         const r = payload.new;
-
-        const msg =
-          `${r.first_name} ${r.last_name}, ` +
-          `${String(r.res_date).split('-').reverse().join('.')} ` +
-          `${hhmm(r.res_time)}, ${r.guests || '?'} pax ` +
-          `(Rez alan: ${r.taken_by || '-'})`;
-
         beep();
-        toast('Yeni rez: ' + msg);
+        toast(
+          'Yeni rezervasyon: '+r.first_name+' '+r.last_name+
+          ' • '+formatDate(r.res_date)+' • '+hhmm(r.res_time)
+        );
       }
-
-      if (!$('vList').classList.contains('hidden')) {
-        loadMonth();
-      }
+      if (!$('vList').classList.contains('hidden')) loadMonth();
+      if (!$('vHome').classList.contains('hidden')) refreshHome();
+      if (!$('vReport').classList.contains('hidden')) drawReport();
     })
     .subscribe();
 
-  show('home');
+  go('home');
+}
+
+/* DATA */
+async function fetchAll() {
+  const {data,error} = await sb.from('reservations').select('*')
+    .order('res_date',{ascending:true})
+    .order('res_time',{ascending:true});
+  if (error) {
+    toast('Veriler alınamadı: '+error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function refreshHome() {
+  $('todayLabel').textContent = new Date().toLocaleDateString('tr-TR',{
+    weekday:'long',day:'numeric',month:'long',year:'numeric'
+  });
+
+  const all = await fetchAll();
+  const today = all.filter(r=>r.res_date===todayStr() && active(r));
+  const monthPrefix = todayStr().slice(0,7);
+  const thisMonth = all.filter(r=>r.res_date?.slice(0,7)===monthPrefix && active(r));
+  const pending = all.filter(r=>
+    r.res_date >= todayStr() &&
+    (r.status || 'confirmed') === 'confirmed'
+  );
+
+  $('statToday').textContent = today.length;
+  $('statPax').textContent = paxOf(today);
+  $('statTodayPax').textContent = paxOf(today)+' misafir';
+  $('statMonth').textContent = thisMonth.length;
+  $('statMonthPax').textContent = paxOf(thisMonth)+' misafir';
+  $('statPending').textContent = pending.length;
+
+  $('todayItems').innerHTML = today.length
+    ? today.sort((a,b)=>hhmm(a.res_time).localeCompare(hhmm(b.res_time)))
+      .map(r=>miniCard(r)).join('')
+    : '<div class="empty">Bugün için rezervasyon bulunmuyor.</div>';
+
+  attachCardEvents($('todayItems'));
+}
+
+function miniCard(r) {
+  return `
+    <div class="report-row">
+      <div>
+        <div class="report-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
+        <div class="small-muted">${hhmm(r.res_time)} · ${Number(r.guests)||0} pax</div>
+      </div>
+      <span class="${statusClass(r.status)}">${STATUS[r.status || 'confirmed']}</span>
+    </div>`;
 }
 
 /* CALENDAR */
-$('dows').innerHTML = [
-  'Pzt','Sal','Çar','Per','Cum','Cmt','Paz'
-].map(d => `<div class="dow">${d}</div>`).join('');
+$('dows').innerHTML = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']
+  .map(d=>`<div class="dow">${d}</div>`).join('');
 
-$('prev').onclick = () => {
-  month.setMonth(month.getMonth() - 1);
+$('prev').onclick = ()=>{
+  month.setMonth(month.getMonth()-1);
   loadMonth();
 };
-
-$('next').onclick = () => {
-  month.setMonth(month.getMonth() + 1);
+$('next').onclick = ()=>{
+  month.setMonth(month.getMonth()+1);
   loadMonth();
 };
 
 async function loadMonth() {
-  const y = month.getFullYear();
-  const m = month.getMonth();
-  const last = new Date(y, m + 1, 0).getDate();
+  const y=month.getFullYear(), m=month.getMonth();
+  const last=new Date(y,m+1,0).getDate();
 
-  const { data, error } = await sb
-    .from('reservations')
-    .select('*')
-    .gte('res_date', ymd(y, m, 1))
-    .lte('res_date', ymd(y, m, last))
+  const {data,error}=await sb.from('reservations').select('*')
+    .gte('res_date',ymd(y,m,1))
+    .lte('res_date',ymd(y,m,last))
     .order('res_time');
 
-  rows = error ? [] : data;
+  rows=error ? [] : (data || []);
+  if (error) toast('Takvim yüklenemedi: '+error.message);
 
-  if (error) {
-    toast('Veriler alınamadı: ' + error.message);
-  }
-
-  if (!selDate || selDate.slice(0, 7) !== ymd(y, m, 1).slice(0, 7)) {
-    const today = todayStr();
-    selDate = today.slice(0, 7) === ymd(y, m, 1).slice(0, 7)
-      ? today
-      : ymd(y, m, 1);
+  if (!selDate || selDate.slice(0,7)!==ymd(y,m,1).slice(0,7)) {
+    const today=todayStr();
+    selDate=today.slice(0,7)===ymd(y,m,1).slice(0,7) ? today : ymd(y,m,1);
   }
 
   drawCal();
@@ -467,177 +791,371 @@ async function loadMonth() {
 }
 
 function drawCal() {
-  const y = month.getFullYear();
-  const m = month.getMonth();
-  const last = new Date(y, m + 1, 0).getDate();
+  const y=month.getFullYear(),m=month.getMonth();
+  const last=new Date(y,m+1,0).getDate();
 
-  $('monthLbl').textContent =
-    month.toLocaleDateString('tr-TR', {
-      month: 'long',
-      year: 'numeric'
-    });
-
-  const lead = (new Date(y, m, 1).getDay() + 6) % 7;
-  const sum = {};
-
-  rows.forEach(r => {
-    sum[r.res_date] = (sum[r.res_date] || 0) + (r.guests || 0);
+  $('monthLbl').textContent=month.toLocaleDateString('tr-TR',{
+    month:'long',year:'numeric'
   });
 
-  let html = '<div></div>'.repeat(lead);
+  const lead=(new Date(y,m,1).getDay()+6)%7;
+  const sums={};
 
-  for (let d = 1; d <= last; d++) {
-    const date = ymd(y, m, d);
-    const off = isMon(date);
+  rows.filter(active).forEach(r=>{
+    sums[r.res_date]=(sums[r.res_date]||0)+(Number(r.guests)||0);
+  });
 
-    html += `
-      <button class="day${off ? ' off' : ''}${date === todayStr() ? ' today' : ''}${date === selDate ? ' sel' : ''}"
-        data-d="${date}"${off ? ' disabled' : ''}>
-        ${d}<i>${sum[date] || ''}</i>
+  let html='<div></div>'.repeat(lead);
+
+  for(let d=1;d<=last;d++){
+    const date=ymd(y,m,d);
+    const off=isMon(date);
+    html+=`
+      <button class="day${off?' off':''}${date===todayStr()?' today':''}${date===selDate?' sel':''}"
+        data-d="${date}" ${off?'disabled':''}>
+        <span>${d}</span><i>${sums[date]||''}</i>
       </button>`;
   }
 
-  $('cal').innerHTML = html;
-
-  $('cal').querySelectorAll('.day:not(.off)').forEach(button => {
-    button.onclick = () => {
-      selDate = button.dataset.d;
+  $('cal').innerHTML=html;
+  $('cal').querySelectorAll('.day:not(.off)').forEach(button=>{
+    button.onclick=()=>{
+      selDate=button.dataset.d;
+      $('dateFilter').value='day';
       drawCal();
       drawDay();
     };
   });
 }
 
+/* RESERVATION LIST */
+function getFilteredRows() {
+  const search=$('searchBox').value.trim().toLocaleLowerCase('tr-TR');
+  const status=$('statusFilter').value;
+  const dateMode=$('dateFilter').value;
+
+  return rows.filter(r=>{
+    if (dateMode==='day' && r.res_date!==selDate) return false;
+    if (dateMode==='month' && r.res_date?.slice(0,7)!==selDate?.slice(0,7)) return false;
+    if (status!=='all' && (r.status || 'confirmed')!==status) return false;
+
+    if (search) {
+      const hay=[r.first_name,r.last_name,r.phone,r.taken_by,r.note]
+        .join(' ').toLocaleLowerCase('tr-TR');
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  }).sort((a,b)=>
+    (a.res_date+' '+hhmm(a.res_time)).localeCompare(b.res_date+' '+hhmm(b.res_time))
+  );
+}
+
 function drawDay() {
-  const list = rows.filter(r => r.res_date === selDate);
+  const list=getFilteredRows();
 
-  $('dayLbl').textContent = new Date(selDate + 'T12:00:00')
-    .toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'long',
-      weekday: 'long'
-    });
+  $('dayLbl').textContent=$('dateFilter').value==='day'
+    ? new Date(selDate+'T12:00:00').toLocaleDateString('tr-TR',{
+        day:'numeric',month:'long',weekday:'long'
+      })
+    : 'Rezervasyon sonuçları';
 
-  $('items').innerHTML = list.length
-    ? list.map(r => `
-      <div class="item">
-        <div class="top">
-          <span class="nm">${esc(r.first_name)} ${esc(r.last_name)}</span>
-          <span class="tm">${hhmm(r.res_time)}</span>
+  $('items').innerHTML=list.length
+    ? list.map(cardHTML).join('')
+    : '<div class="card empty">Aradığınız kriterlere uygun rezervasyon bulunamadı.</div>';
+
+  $('totalPax').textContent=paxOf(list.filter(active));
+  attachCardEvents($('items'));
+}
+
+function cardHTML(r) {
+  const status=r.status || 'confirmed';
+  const phone=String(r.phone||'').replace(/[^\d+]/g,'');
+  const wa=String(r.phone||'').replace(/\D/g,'');
+
+  return `
+    <article class="res-item">
+      <div class="res-top">
+        <div>
+          <div class="res-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
+          <div class="res-meta">
+            <strong>${formatDate(r.res_date)}</strong> · ${Number(r.guests)||0} pax<br>
+            Rezervasyonu alan: <strong>${esc(r.taken_by||'-')}</strong><br>
+            Sisteme giriş: ${entered(r.created_at)}
+            ${r.phone?`<br>Telefon: <a href="tel:${esc(phone)}">${esc(r.phone)}</a>`:''}
+          </div>
         </div>
-        <div class="meta">
-          <b>${r.guests || '?'} pax</b> · Rez alan:
-          <b>${esc(r.taken_by || '-')}</b><br>
-          Sisteme girilen: ${entered(r.created_at)}
-          ${r.note ? '<br>Not: ' + esc(r.note) : ''}
-        </div>
-        <div class="row">
-          <a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>
-          <button class="del" data-id="${r.id}">Sil</button>
-        </div>
+        <div class="res-time">${hhmm(r.res_time)}</div>
       </div>
-    `).join('')
-    : '<div class="empty">Bu gün için rezervasyon yok.</div>';
 
-  $('totalPax').textContent =
-    list.reduce((total, r) => total + (r.guests || 0), 0);
+      ${r.note?`<div class="res-note">📝 ${esc(r.note)}</div>`:''}
 
-  $('items').querySelectorAll('.del').forEach(button => {
-    button.onclick = async () => {
-      if (!confirm('Bu rezervasyon silinsin mi?')) return;
+      <div class="res-actions">
+        <select class="status ${statusClass(status)}" data-status-id="${r.id}">
+          ${statusOptions(status)}
+        </select>
+        ${wa?`<button class="btn btn-small btn-light" data-wa="${esc(wa)}">WhatsApp</button>`:''}
+        <button class="btn btn-small btn-outline" data-edit="${r.id}">Düzenle</button>
+        <button class="btn btn-small btn-danger" data-delete="${r.id}">Sil</button>
+      </div>
+    </article>`;
+}
 
-      const { error } = await sb
-        .from('reservations')
-        .delete()
-        .eq('id', button.dataset.id);
-
+function attachCardEvents(container) {
+  container.querySelectorAll('[data-status-id]').forEach(select=>{
+    select.onchange=async()=>{
+      const {error}=await sb.from('reservations')
+        .update({status:select.value}).eq('id',select.dataset.statusId);
       if (error) {
-        toast('Silinemedi: ' + error.message);
-      } else {
-        loadMonth();
+        toast('Durum güncellenemedi: '+error.message);
+        return;
       }
+      toast('Rezervasyon durumu güncellendi.');
+      await loadMonth();
+      await refreshHome();
+    };
+  });
+
+  container.querySelectorAll('[data-wa]').forEach(button=>{
+    button.onclick=()=>{
+      window.open('https://wa.me/'+button.dataset.wa,'_blank');
+    };
+  });
+
+  container.querySelectorAll('[data-edit]').forEach(button=>{
+    button.onclick=()=>{
+      const record=rows.find(r=>String(r.id)===String(button.dataset.edit));
+      if (record) startEdit(record);
+    };
+  });
+
+  container.querySelectorAll('[data-delete]').forEach(button=>{
+    button.onclick=async()=>{
+      if (!confirm('Bu rezervasyonu kalıcı olarak silmek istiyor musunuz?')) return;
+      const {error}=await sb.from('reservations')
+        .delete().eq('id',button.dataset.delete);
+      if (error) {
+        toast('Silinemedi: '+error.message);
+        return;
+      }
+      toast('Rezervasyon silindi.');
+      await loadMonth();
+      await refreshHome();
     };
   });
 }
 
-/* RESERVATION FORM */
-$('addForDay').onclick = () => {
-  show('form');
-  $('fDate').value = selDate;
+['searchBox','statusFilter','dateFilter'].forEach(id=>{
+  $(id).addEventListener(id==='searchBox'?'input':'change',drawDay);
+});
+
+$('clearFilters').onclick=()=>{
+  $('searchBox').value='';
+  $('statusFilter').value='all';
+  $('dateFilter').value='day';
+  drawDay();
 };
 
+$('addForDay').onclick=()=>{
+  editingId=null;
+  go('form');
+  $('fDate').value=selDate;
+};
+
+/* FORM AND EDITING */
 function prepForm() {
+  editingId=null;
   ['fFirst','fLast','fTime','fPhone','fGuests','fNote']
-    .forEach(id => $(id).value = '');
+    .forEach(id=>$(id).value='');
 
-  $('fDate').value = selDate && !isMon(selDate) ? selDate : '';
+  $('fDate').value=selDate && !isMon(selDate) ? selDate : '';
+  const shared=user?.user_metadata?.shared;
 
-  const shared = user.user_metadata?.shared;
-
-  $('fTaker').value = shared
-    ? ''
-    : (user.user_metadata?.display_name || user.email);
-
-  $('fTaker').readOnly = !shared;
-  $('fTaker').placeholder = shared ? 'Adınızı yazın' : '';
-  $('formErr').textContent = '';
+  $('fTaker').value=shared?'':(user?.user_metadata?.display_name||user?.email||'');
+  $('fTaker').readOnly=!shared;
+  $('fTaker').placeholder=shared?'Adınızı yazın':'';
+  $('formErr').textContent='';
+  $('formTitle').textContent='Yeni Rezervasyon';
+  $('saveBtn').textContent='Rezervasyonu Kaydet';
+  $('cancelEdit').classList.add('hidden');
 }
 
-$('saveBtn').onclick = async () => {
-  const value = id => $(id).value.trim();
-  const errorMessage = message => {
-    $('formErr').textContent = message;
+function startEdit(r) {
+  editingId=r.id;
+  $('fFirst').value=r.first_name||'';
+  $('fLast').value=r.last_name||'';
+  $('fDate').value=r.res_date||'';
+  $('fTime').value=hhmm(r.res_time);
+  $('fPhone').value=r.phone||'';
+  $('fGuests').value=r.guests||'';
+  $('fTaker').value=r.taken_by||'';
+  $('fNote').value=r.note||'';
+  $('fTaker').readOnly=false;
+  $('formErr').textContent='';
+  $('formTitle').textContent='Rezervasyonu Düzenle';
+  $('saveBtn').textContent='Değişiklikleri Kaydet';
+  $('cancelEdit').classList.remove('hidden');
+  go('form');
+}
+
+$('cancelEdit').onclick=()=>{
+  editingId=null;
+  go('list');
+};
+
+$('saveBtn').onclick=async()=>{
+  const value=id=>$(id).value.trim();
+  const fail=message=>{$('formErr').textContent=message;};
+
+  if (!value('fFirst')||!value('fLast')||!value('fDate')||
+      !value('fTime')||!value('fPhone')||!value('fGuests')||
+      !value('fTaker')) {
+    return fail('Not hariç tüm alanları doldurun.');
+  }
+
+  if (isMon(value('fDate'))) return fail('Pazartesi günleri kapalıdır.');
+  if (+value('fGuests')<1) return fail('Misafir sayısı en az 1 olmalıdır.');
+
+  const payload={
+    first_name:value('fFirst'),
+    last_name:value('fLast'),
+    res_date:value('fDate'),
+    res_time:value('fTime'),
+    phone:value('fPhone'),
+    guests:+value('fGuests'),
+    taken_by:value('fTaker'),
+    note:value('fNote')||null
   };
 
-  if (
-    !value('fFirst') ||
-    !value('fLast') ||
-    !value('fDate') ||
-    !value('fTime') ||
-    !value('fPhone') ||
-    !value('fGuests') ||
-    !value('fTaker')
-  ) {
-    return errorMessage('Not hariç tüm alanları doldurun.');
-  }
-
-  if (isMon(value('fDate'))) {
-    return errorMessage('Pazartesi günleri kapalı, başka bir gün seçin.');
-  }
-
-  if (+value('fGuests') < 1) {
-    return errorMessage('Pax en az 1 olmalı.');
-  }
-
-  $('saveBtn').disabled = true;
+  $('saveBtn').disabled=true;
 
   try {
-    const { error } = await sb.from('reservations').insert({
-      first_name: value('fFirst'),
-      last_name: value('fLast'),
-      res_date: value('fDate'),
-      res_time: value('fTime'),
-      phone: value('fPhone'),
-      guests: +value('fGuests'),
-      taken_by: value('fTaker'),
-      note: value('fNote') || null
-    });
+    let result;
 
-    if (error) throw error;
+    if (editingId) {
+      result=await sb.from('reservations').update(payload).eq('id',editingId);
+    } else {
+      result=await sb.from('reservations').insert(payload);
+    }
 
-    selDate = value('fDate');
-    month = new Date(selDate + 'T12:00:00');
+    if (result.error) throw result.error;
+
+    selDate=value('fDate');
+    month=new Date(selDate+'T12:00:00');
     month.setDate(1);
+    editingId=null;
 
-    toast('Rezervasyon kaydedildi.');
-    show('list');
+    toast('Rezervasyon başarıyla kaydedildi.');
+    go('list');
 
-  } catch (error) {
-    errorMessage('Kaydedilemedi: ' + (error.message || error));
+  } catch(error) {
+    fail('Kaydedilemedi: '+(error.message||error));
   } finally {
-    $('saveBtn').disabled = false;
+    $('saveBtn').disabled=false;
   }
 };
+
+/* STAFF REPORT */
+async function drawReport() {
+  const all=await fetchAll();
+  const period=$('reportPeriod').value;
+  const filtered=all.filter(r=>
+    active(r) && (period==='all' || r.res_date?.slice(0,7)===todayStr().slice(0,7))
+  );
+
+  const staff={};
+  filtered.forEach(r=>{
+    const name=String(r.taken_by||'Belirtilmemiş').trim();
+    if (!staff[name]) staff[name]={count:0,pax:0};
+    staff[name].count++;
+    staff[name].pax+=Number(r.guests)||0;
+  });
+
+  const sorted=Object.entries(staff).sort((a,b)=>b[1].count-a[1].count);
+  $('reportStats').innerHTML=`
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number">${filtered.length}</div>
+        <div class="stat-label">Rezervasyon</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">${paxOf(filtered)}</div>
+        <div class="stat-label">Toplam misafir</div>
+      </div>
+    </div>`;
+
+  $('staffRows').innerHTML=sorted.length
+    ? sorted.map(([name,data],i)=>`
+      <div class="report-row">
+        <div>
+          <div class="report-name">${i+1}. ${esc(name)}</div>
+          <div class="small-muted">${data.pax} misafir</div>
+        </div>
+        <div class="report-count">${data.count} rezervasyon</div>
+      </div>`).join('')
+    : '<div class="empty">Bu dönemde personel kaydı bulunamadı.</div>';
+}
+
+$('reportPeriod').onchange=drawReport;
+
+/* CSV EXPORT - EXCEL UYUMLU */
+function downloadCSV(data,filename) {
+  const headers=[
+    'Tarih','Saat','Ad','Soyad','Telefon','Pax',
+    'Rezervasyonu Alan','Not','Durum','Sisteme Giriş'
+  ];
+
+  const rowsCSV=data.map(r=>[
+    formatDate(r.res_date),
+    hhmm(r.res_time),
+    r.first_name,
+    r.last_name,
+    r.phone,
+    r.guests,
+    r.taken_by,
+    r.note,
+    STATUS[r.status||'confirmed'],
+    entered(r.created_at)
+  ]);
+
+  const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+  const csv='\uFEFF'+[headers,...rowsCSV].map(row=>row.map(quote).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('Rapor indirildi.');
+}
+
+async function exportAll() {
+  const all=await fetchAll();
+  downloadCSV(all,'ottoman-rezervasyonlar-'+todayStr()+'.csv');
+}
+
+$('exportHome').onclick=exportAll;
+$('exportReport').onclick=async()=>{
+  const all=await fetchAll();
+  const period=$('reportPeriod').value;
+  const filtered=all.filter(r=>
+    active(r) && (period==='all' || r.res_date?.slice(0,7)===todayStr().slice(0,7))
+  );
+  downloadCSV(filtered,'ottoman-personel-raporu-'+todayStr()+'.csv');
+};
+
+/* START */
+selDate=todayStr();
+showInitial();
+
+function showInitial() {
+  sb.auth.getSession().then(({data})=>{
+    if (data?.session?.user) setUser(data.session.user);
+    else go('login');
+  });
+}
 </script>
 </body>
 </html>
