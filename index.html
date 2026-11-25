@@ -21,8 +21,10 @@ header small{display:block;opacity:.7;font-weight:400;font-size:13px}
 header button{background:none;border:1px solid #ffffff55;color:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px}
 main{max-width:640px;margin:0 auto;padding:16px}
 .hidden{display:none!important}
-.btn{display:block;width:100%;border:0;border-radius:12px;padding:16px;font:inherit;font-size:17px;font-weight:600;background:var(--teal);color:#fff;margin-bottom:12px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:16px;font:inherit;font-size:17px;font-weight:600;background:var(--teal);color:#fff;margin-bottom:12px;cursor:pointer}
 .btn.alt{background:var(--navy)}
+.btn.push{background:#fff;color:var(--navy);border:1px solid var(--line);font-size:15px;padding:13px}
+.btn.push.on{background:#e6f4ea;color:#137333;border-color:#ceead6}
 .btn.ghost{background:none;color:var(--navy);border:1px solid var(--line);font-size:15px;padding:10px;width:auto;display:inline-block;margin:0 0 12px}
 label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
 input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:#fff}
@@ -53,7 +55,8 @@ input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radiu
 .total b{font-size:34px;font-weight:800}
 .empty{color:var(--mute);text-align:center;padding:18px}
 .toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--navy);color:#fff;padding:14px;border-radius:12px;text-align:center;z-index:9}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1620;--card:#18232f;--ink:#e8edf1;--mute:#93a1ae;--line:#2c3a48}input,textarea,.day,.item{background:#18232f;color:var(--ink)}.day.off{background:#111a23}.day.sel{background:var(--teal)}.calhead button{background:#223142;color:var(--ink)}}
+.hint{font-size:13px;color:var(--mute);background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.45}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1620;--card:#18232f;--ink:#e8edf1;--mute:#93a1ae;--line:#2c3a48}input,textarea,.day,.item{background:#18232f;color:var(--ink)}.day.off{background:#111a23}.day.sel{background:var(--teal)}.calhead button{background:#223142;color:var(--ink)}.btn.push{background:#18232f;color:var(--ink)}}
 </style>
 </head>
 <body>
@@ -74,6 +77,8 @@ input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radiu
   <p id="hello" style="color:var(--mute);margin:4px 0 16px"></p>
   <button class="btn" data-go="list">Rezervasyonlar</button>
   <button class="btn alt" data-go="form">Rezervasyon Girişi</button>
+  <button class="btn push" id="pushBtn">🔔 Kilit Ekranı Bildirimlerini Aç</button>
+  <div id="pushHint" class="hint hidden"></div>
 </section>
 
 <section id="vList" class="hidden">
@@ -110,11 +115,17 @@ input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radiu
 <script>
 const SUPABASE_URL='https://retdszkkqtxrcrbqqphw.supabase.co';
 const SUPABASE_KEY='sb_publishable_w4DOGO1aaL04vHlxwXd4gA_NjGMU7bq';
+const VAPID_PUBLIC='BBtX4eAJDu6gWidYpHT5BR43uNlzjuiPuJ17YXOFkmFet4UiE4ltlxLLJqsnh2yfT-xKLiq58xpj9ko-JbsbB-A';
+
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const TZ='Europe/Nicosia';
-let user=null,month=new Date(),selDate=null,rows=[],chan=null;
+let user=null,month=new Date(),selDate=null,rows=[],chan=null,swReg=null;
 month.setDate(1);
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(r=>{swReg=r;checkPushState()}).catch(()=>{});
+}
 
 const pad=n=>String(n).padStart(2,'0');
 const ymd=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
@@ -127,6 +138,7 @@ const entered=iso=>new Date(iso).toLocaleString('tr-TR',{timeZone:TZ,day:'2-digi
 function show(v){
   ['Login','Home','List','Form'].forEach(n=>$('v'+n).classList.toggle('hidden',n.toLowerCase()!==v));
   $('logout').classList.toggle('hidden',v==='login');
+  if(v==='home')checkPushState();
   if(v==='list')loadMonth();
   if(v==='form')prepForm();
 }
@@ -134,6 +146,61 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),5000)}
 function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();o.stop(c.currentTime+.25)}catch(e){}}
+
+/* ---------- Push Bildirim ---------- */
+function urlBase64ToUint8Array(b64){
+  const p='='.repeat((4-b64.length%4)%4);
+  const raw=atob((b64+p).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+const b64Url=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+async function checkPushState(){
+  const btn=$('pushBtn'),hint=$('pushHint');
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(isIOS&&!standalone){
+    btn.classList.add('hidden');
+    hint.classList.remove('hidden');
+    hint.innerHTML='📱 <b>iPhone Bildirim Kurulumu:</b> Kilit ekranı bildirimi için Safari alt menüsünden <b>Paylaş (↑) → Ana Ekrana Ekle</b> yapıp uygulamayı ana ekrandan açın.';
+    return;
+  }
+  if(!('Notification' in window)||!('PushManager' in window)){
+    btn.classList.add('hidden');return;
+  }
+  btn.classList.remove('hidden');
+  hint.classList.add('hidden');
+  if(Notification.permission==='granted'&&swReg){
+    const sub=await swReg.pushManager.getSubscription();
+    if(sub){btn.textContent='✅ Bu Cihazda Bildirimler Açık';btn.classList.add('on');return}
+  }
+  btn.textContent='🔔 Kilit Ekranı Bildirimlerini Aç';
+  btn.classList.remove('on');
+}
+
+$('pushBtn').onclick=async()=>{
+  try{
+    if(!user)return;
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){toast('Bildirim izni verilmedi. Telefon ayarlarından izin verin.');return}
+    const reg=swReg||await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)});
+    }
+    const {error}=await sb.from('push_subscriptions').upsert({
+      user_id:user.id,
+      endpoint:sub.endpoint,
+      p256dh:b64Url(sub.getKey('p256dh')),
+      auth:b64Url(sub.getKey('auth'))
+    },{onConflict:'endpoint'});
+    if(error)throw error;
+    toast('Kilit ekranı bildirimleri aktif edildi!');
+    checkPushState();
+  }catch(e){
+    toast('Bildirim açılamadı: '+(e.message||e));
+  }
+};
 
 /* ---------- Giriş ---------- */
 $('loginBtn').onclick=async()=>{
