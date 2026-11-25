@@ -212,7 +212,7 @@ $('logout').onclick=()=>sb.auth.signOut();
 sb.auth.onAuthStateChange((ev,s)=>{ if(ev==='INITIAL_SESSION'||ev==='SIGNED_IN'||ev==='SIGNED_OUT')setUser(s?.user||null) });
 
 function setUser(u){
-  if(u&&user&&u.id===user.id)return;
+  if(p.eventType==='INSERT'&&p.new.created_by!==user.id){beep();toast(`Yeni rez: ${p.new.first_name} ${p.new.last_name}, ${p.new.res_date.split('-').reverse().join('.')} ${hhmm(p.new.res_time)}, ${p.new.guests||'?'} pax`)}
   user=u;
   if(chan){sb.removeChannel(chan);chan=null}
   if(!u){show('login');return}
