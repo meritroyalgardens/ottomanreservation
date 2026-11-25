@@ -185,6 +185,44 @@ textarea{resize:vertical}
 }
 .wa-btn svg{width:21px;height:21px;fill:currentColor}
 .phone-link{color:var(--navy);font-weight:750;text-decoration:none}
+
+/* PAX / ÇOCUK SAYACI */
+.pax-box{
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:12px;
+  background:#FAF9F6;
+  margin-top:5px;
+}
+.pax-counter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 0;
+  border-bottom:1px solid var(--line);
+}
+.pax-counter:last-child{border-bottom:0}
+.pax-counter-info{font-size:12px;font-weight:750}
+.pax-counter-info small{
+  display:block;color:var(--muted);font-weight:500;margin-top:3px;
+}
+.counter-controls{display:flex;align-items:center;gap:12px}
+.counter-btn{
+  width:34px;height:34px;border:1px solid var(--line);
+  border-radius:9px;background:white;color:var(--navy);
+  font-size:20px;font-weight:800;padding:0;
+}
+.counter-value{
+  min-width:22px;text-align:center;font-size:16px;font-weight:850;
+}
+.pax-total{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;padding:13px;border-radius:11px;
+  background:var(--navy);color:white;
+}
+.pax-total strong{font-size:23px}
+
 @media(min-width:650px){
   main{padding:26px 22px}
   .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -409,11 +447,49 @@ textarea{resize:vertical}
         </div>
         <div class="small-muted" style="margin-top:6px">Numara, seçilen ülke koduyla birlikte kaydedilir.</div>
       </div>
-      <div>
-        <label>Misafir sayısı (Pax)</label>
-        <input id="fGuests" type="number" min="1" inputmode="numeric" placeholder="Örn. 4">
+
+      <div class="full">
+        <label>Misafir Sayısı</label>
+        <div class="pax-box">
+          <label style="margin-top:0">Yetişkin sayısı</label>
+          <input id="fGuests" type="number" min="0" value="1"
+            inputmode="numeric" placeholder="Yetişkin sayısı">
+
+          <input type="hidden" id="fFreeChild" value="0">
+          <input type="hidden" id="fHalfChild" value="0">
+
+          <div class="pax-counter">
+            <div class="pax-counter-info">
+              0–6 Yaş
+              <small>Ücretsiz çocuk</small>
+            </div>
+            <div class="counter-controls">
+              <button type="button" class="counter-btn" data-counter="fFreeChild" data-step="-1">−</button>
+              <span class="counter-value" id="fFreeChildValue">0</span>
+              <button type="button" class="counter-btn" data-counter="fFreeChild" data-step="1">+</button>
+            </div>
+          </div>
+
+          <div class="pax-counter">
+            <div class="pax-counter-info">
+              7–12 Yaş
+              <small>%50 ücretli çocuk</small>
+            </div>
+            <div class="counter-controls">
+              <button type="button" class="counter-btn" data-counter="fHalfChild" data-step="-1">−</button>
+              <span class="counter-value" id="fHalfChildValue">0</span>
+              <button type="button" class="counter-btn" data-counter="fHalfChild" data-step="1">+</button>
+            </div>
+          </div>
+
+          <div class="pax-total">
+            <span>TOPLAM MİSAFİR (PAX)</span>
+            <strong id="fTotalPax">1</strong>
+          </div>
+        </div>
       </div>
-      <div>
+
+      <div class="full">
         <label>Rezervasyonu alan</label>
         <input id="fTaker" autocomplete="off" placeholder="Personel adı">
       </div>
@@ -536,6 +612,83 @@ function statusOptions(current){
   return Object.entries(STATUS).map(([key,label])=>
     `<option value="${key}" ${key===(current||'confirmed')?'selected':''}>${label}</option>`
   ).join('');
+}
+
+/* PAX HESAPLAMA VE ÇOCUK BİLGİLERİ */
+function getChildCounts(){
+  return {
+    free:Math.max(0,Number($('fFreeChild').value)||0),
+    half:Math.max(0,Number($('fHalfChild').value)||0)
+  };
+}
+
+function getTotalPax(){
+  const adults=Math.max(0,Number($('fGuests').value)||0);
+  const children=getChildCounts();
+  return adults+children.free+children.half;
+}
+
+function updatePaxTotal(){
+  const children=getChildCounts();
+  $('fFreeChildValue').textContent=children.free;
+  $('fHalfChildValue').textContent=children.half;
+  $('fTotalPax').textContent=getTotalPax();
+}
+
+function setChildCounts(free,half){
+  $('fFreeChild').value=Math.max(0,Number(free)||0);
+  $('fHalfChild').value=Math.max(0,Number(half)||0);
+  updatePaxTotal();
+}
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-counter]');
+  if(!btn)return;
+
+  const input=$(btn.dataset.counter);
+  const current=Number(input.value)||0;
+  input.value=Math.max(0,current+Number(btn.dataset.step));
+  updatePaxTotal();
+});
+
+$('fGuests').addEventListener('input',updatePaxTotal);
+
+/*
+  Çocuk yaş grubu bilgileri mevcut note alanında saklanır.
+  Böylece Supabase tablosuna yeni sütun eklemek gerekmez.
+*/
+const PAX_META_PATTERN=/\[\[OH_PAX:free=(\d+);half=(\d+)\]\]/;
+
+function readPaxNote(note){
+  const text=String(note||'');
+  const match=text.match(PAX_META_PATTERN);
+
+  return {
+    free:match?Number(match[1]):0,
+    half:match?Number(match[2]):0,
+    note:text.replace(PAX_META_PATTERN,'').trim()
+  };
+}
+
+function savePaxNote(note,free,half){
+  const clean=String(note||'').trim();
+  const metadata=(free||half)
+    ?`[[OH_PAX:free=${free};half=${half}]]`
+    :'';
+
+  return [clean,metadata].filter(Boolean).join('\n');
+}
+
+function visibleNote(note){
+  return readPaxNote(note).note;
+}
+
+function childSummary(note){
+  const data=readPaxNote(note);
+  const parts=[];
+  if(data.free)parts.push(`${data.free} ücretsiz çocuk`);
+  if(data.half)parts.push(`${data.half} yarım ücretli çocuk`);
+  return parts.join(' · ');
 }
 
 function go(v){
@@ -686,9 +839,10 @@ async function refreshHome(){
     :'<div class="empty">Bugün için rezervasyon bulunmuyor.</div>';
 }
 function miniCard(r){
+  const children=childSummary(r.note);
   return `<div class="report-row">
     <div><div class="report-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
-    <div class="small-muted">${hhmm(r.res_time)} · ${Number(r.guests)||0} pax</div></div>
+    <div class="small-muted">${hhmm(r.res_time)} · ${Number(r.guests)||0} pax${children?' · '+esc(children):''}</div></div>
     <span class="${statusClass(r.status)}">${STATUS[r.status||'confirmed']}</span>
   </div>`;
 }
@@ -759,6 +913,9 @@ function cardHTML(r){
   const phone=String(r.phone||'').replace(/[^\d+]/g,'');
   const wa=String(r.phone||'').replace(/\D/g,'');
   const overdue=isOverdue(r);
+  const children=childSummary(r.note);
+  const note=visibleNote(r.note);
+
   return `<article class="res-item${overdue?' overdue':''}">
     <div class="res-top">
       <div>
@@ -766,6 +923,7 @@ function cardHTML(r){
         ${overdue?'<div class="overdue-tag">SAATİ GEÇTİ · DURUM GÜNCELLENMELİ</div>':''}
         <div class="res-meta">
           <strong>${formatDate(r.res_date)}</strong> · ${Number(r.guests)||0} pax<br>
+          ${children?`Çocuk bilgisi: <strong>${esc(children)}</strong><br>`:''}
           Rezervasyonu alan: <strong>${esc(r.taken_by||'-')}</strong><br>
           Sisteme giriş: ${entered(r.created_at)}
           ${r.phone?`<br>Telefon: <a class="phone-link" href="tel:${esc(phone)}">${esc(r.phone)}</a>`:''}
@@ -773,7 +931,7 @@ function cardHTML(r){
       </div>
       <div class="res-time">${hhmm(r.res_time)}</div>
     </div>
-    ${r.note?`<div class="res-note">📝 ${esc(r.note)}</div>`:''}
+    ${note?`<div class="res-note">📝 ${esc(note)}</div>`:''}
     <div class="res-actions">
       <select class="${statusClass(status)}" data-status-id="${r.id}">${statusOptions(status)}</select>
       ${wa?`<button class="wa-btn" title="WhatsApp ile yaz" aria-label="WhatsApp" data-wa="${esc(wa)}">
@@ -846,8 +1004,11 @@ function loadPhone(phone){
 /* FORM AND EDITING */
 function prepForm(){
   editingId=null;
-  ['fFirst','fLast','fTime','fPhone','fGuests','fNote'].forEach(id=>$(id).value='');
+  ['fFirst','fLast','fTime','fPhone','fNote'].forEach(id=>$(id).value='');
+  $('fGuests').value=1;
   $('fCountry').value='+90';
+  setChildCounts(0,0);
+
   $('fDate').value=selDate&&!isMon(selDate)?selDate:'';
   const shared=user?.user_metadata?.shared;
   $('fTaker').value=shared?'':(user?.user_metadata?.display_name||user?.email||'');
@@ -857,46 +1018,91 @@ function prepForm(){
   $('formTitle').textContent='Yeni Rezervasyon';
   $('saveBtn').textContent='Rezervasyonu Kaydet';
   $('cancelEdit').classList.add('hidden');
+  updatePaxTotal();
 }
+
 function startEdit(r){
   editingId=r.id;
-  $('fFirst').value=r.first_name||'';$('fLast').value=r.last_name||'';
-  $('fDate').value=r.res_date||'';$('fTime').value=hhmm(r.res_time);
+  $('fFirst').value=r.first_name||'';
+  $('fLast').value=r.last_name||'';
+  $('fDate').value=r.res_date||'';
+  $('fTime').value=hhmm(r.res_time);
+
   loadPhone(r.phone);
-  $('fGuests').value=r.guests||'';$('fTaker').value=r.taken_by||'';
-  $('fNote').value=r.note||'';$('fTaker').readOnly=false;
-  $('formErr').textContent='';$('formTitle').textContent='Rezervasyonu Düzenle';
+
+  const paxData=readPaxNote(r.note);
+  const total=Number(r.guests)||0;
+
+  $('fGuests').value=Math.max(0,total-paxData.free-paxData.half);
+  setChildCounts(paxData.free,paxData.half);
+
+  $('fTaker').value=r.taken_by||'';
+  $('fNote').value=paxData.note;
+  $('fTaker').readOnly=false;
+
+  $('formErr').textContent='';
+  $('formTitle').textContent='Rezervasyonu Düzenle';
   $('saveBtn').textContent='Değişiklikleri Kaydet';
-  $('cancelEdit').classList.remove('hidden');go('form');
+  $('cancelEdit').classList.remove('hidden');
+
+  go('form');
+  updatePaxTotal();
 }
+
 $('cancelEdit').onclick=()=>{editingId=null;go('list');};
 
 $('saveBtn').onclick=async()=>{
   const value=id=>$(id).value.trim();
   const fail=message=>{$('formErr').textContent=message;};
+
+  const adults=Number(value('fGuests'))||0;
+  const children=getChildCounts();
+  const totalPax=adults+children.free+children.half;
+
   if(!value('fFirst')||!value('fLast')||!value('fDate')||
-    !value('fTime')||!value('fPhone')||!value('fGuests')||!value('fTaker'))
+    !value('fTime')||!value('fPhone')||!value('fTaker'))
     return fail('Not hariç tüm alanları doldurun.');
+
   if(isMon(value('fDate')))return fail('Pazartesi günleri kapalıdır.');
-  if(+value('fGuests')<1)return fail('Misafir sayısı en az 1 olmalıdır.');
+  if(totalPax<1)return fail('Toplam misafir sayısı en az 1 olmalıdır.');
+
   const phone=normalizePhone();
-  if(phone.replace(/\D/g,'').length<7)return fail('Lütfen geçerli bir telefon numarası girin.');
+  if(phone.replace(/\D/g,'').length<7)
+    return fail('Lütfen geçerli bir telefon numarası girin.');
+
   const payload={
-    first_name:value('fFirst'),last_name:value('fLast'),
-    res_date:value('fDate'),res_time:value('fTime'),
-    phone,guests:+value('fGuests'),taken_by:value('fTaker'),
-    note:value('fNote')||null
+    first_name:value('fFirst'),
+    last_name:value('fLast'),
+    res_date:value('fDate'),
+    res_time:value('fTime'),
+    phone,
+    guests:totalPax,
+    taken_by:value('fTaker'),
+    note:savePaxNote(value('fNote'),children.free,children.half)||null
   };
+
   $('saveBtn').disabled=true;
+
   try{
     let result;
-    if(editingId)result=await sb.from('reservations').update(payload).eq('id',editingId);
-    else result=await sb.from('reservations').insert(payload);
+    if(editingId)
+      result=await sb.from('reservations').update(payload).eq('id',editingId);
+    else
+      result=await sb.from('reservations').insert(payload);
+
     if(result.error)throw result.error;
-    selDate=value('fDate');month=new Date(selDate+'T12:00:00');month.setDate(1);
-    editingId=null;toast('Rezervasyon başarıyla kaydedildi.');go('list');
-  }catch(error){fail('Kaydedilemedi: '+(error.message||error));}
-  finally{$('saveBtn').disabled=false;}
+
+    selDate=value('fDate');
+    month=new Date(selDate+'T12:00:00');
+    month.setDate(1);
+    editingId=null;
+    toast('Rezervasyon başarıyla kaydedildi.');
+    go('list');
+  }catch(error){
+    fail('Kaydedilemedi: '+(error.message||error));
+  }finally{
+    $('saveBtn').disabled=false;
+  }
 };
 
 /* STAFF REPORT - MONTH / YEAR */
@@ -939,7 +1145,7 @@ function downloadCSV(data,filename){
   const headers=['Tarih','Saat','Ad','Soyad','Telefon','Pax','Rezervasyonu Alan','Not','Durum','Sisteme Giriş'];
   const rowsCSV=data.map(r=>[
     formatDate(r.res_date),hhmm(r.res_time),r.first_name,r.last_name,
-    r.phone,r.guests,r.taken_by,r.note,STATUS[r.status||'confirmed'],entered(r.created_at)
+    r.phone,r.guests,r.taken_by,visibleNote(r.note),STATUS[r.status||'confirmed'],entered(r.created_at)
   ]);
   const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
   const csv='\uFEFF'+[headers,...rowsCSV].map(row=>row.map(quote).join(';')).join('\r\n');
