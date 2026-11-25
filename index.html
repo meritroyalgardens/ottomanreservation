@@ -161,7 +161,6 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),5000)}
 function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();o.stop(c.currentTime+.25)}catch(e){}}
 
-/* ---------- Push Bildirim ---------- */
 function urlBase64ToUint8Array(b64){
   const p='='.repeat((4-b64.length%4)%4);
   const raw=atob((b64+p).replace(/-/g,'+').replace(/_/g,'/'));
@@ -199,9 +198,11 @@ $('pushBtn').onclick=async()=>{
     if(perm!=='granted'){toast('Bildirim izni verilmedi. Telefon ayarlarından izin verin.');return}
     const reg=swReg||await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
-    if(!sub){
-      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)});
+    if(sub){
+      await sub.unsubscribe().catch(()=>{});
+      sub=null;
     }
+    sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)});
     const {error}=await sb.from('push_subscriptions').upsert({
       user_id:user.id,
       endpoint:sub.endpoint,
@@ -209,14 +210,16 @@ $('pushBtn').onclick=async()=>{
       auth:b64Url(sub.getKey('auth'))
     },{onConflict:'endpoint'});
     if(error)throw error;
-    toast('Kilit ekranı bildirimleri aktif edildi!');
+    toast('Bildirim bağlantısı yenilendi ve aktif edildi!');
+    if(reg.showNotification){
+      try{await reg.showNotification('Ottoman Kebab House',{body:'Bildirim bağlantısı başarıyla kuruldu!',icon:'icon-192.png'})}catch(e){}
+    }
     checkPushState();
   }catch(e){
     toast('Bildirim açılamadı: '+(e.message||e));
   }
 };
 
-/* ---------- Giriş ---------- */
 $('loginBtn').onclick=async()=>{
   $('loginErr').textContent='';
   const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});
@@ -236,16 +239,12 @@ function setUser(u){
       const msg=`${p.new.first_name} ${p.new.last_name}, ${p.new.res_date.split('-').reverse().join('.')} ${hhmm(p.new.res_time)}, ${p.new.guests||'?'} pax (Rez alan: ${p.new.taken_by||'-'})`;
       beep();
       toast('Yeni rez: '+msg);
-      if('Notification' in window && Notification.permission==='granted'){
-        try{new Notification('Yeni Rezervasyon',{body:msg,icon:'icon-192.png'})}catch(e){}
-      }
     }
     if(!$('vList').classList.contains('hidden'))loadMonth();
   }).subscribe();
   show('home');
 }
 
-/* ---------- Takvim + liste ---------- */
 $('dows').innerHTML=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(d=>`<div class="dow">${d}</div>`).join('');
 $('prev').onclick=()=>{month.setMonth(month.getMonth()-1);loadMonth()};
 $('next').onclick=()=>{month.setMonth(month.getMonth()+1);loadMonth()};
@@ -291,7 +290,6 @@ function drawDay(){
 }
 $('addForDay').onclick=()=>{show('form');$('fDate').value=selDate};
 
-/* ---------- Form ---------- */
 function prepForm(){
   ['fFirst','fLast','fTime','fPhone','fGuests','fNote'].forEach(i=>$(i).value='');
   $('fDate').value=selDate&&!isMon(selDate)?selDate:'';
