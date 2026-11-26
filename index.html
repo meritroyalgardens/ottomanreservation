@@ -138,6 +138,8 @@ textarea{resize:vertical}
 .day:disabled{cursor:not-allowed}
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
 .search{margin-bottom:10px}
+
+/* REZERVASYON LİSTESİ ÖZETİ */
 .list-summary{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -162,6 +164,7 @@ textarea{resize:vertical}
   margin-top:5px;
   line-height:1.1;
 }
+
 .day-heading{font-size:16px;font-weight:850;margin:20px 2px 12px}
 .res-item{
   background:white;border:1px solid var(--line);border-radius:16px;
@@ -207,12 +210,18 @@ textarea{resize:vertical}
 .login-logo p{color:var(--gold);font-size:12px;letter-spacing:1.5px;font-weight:800}
 .login-card{padding:23px}
 .small-muted{font-size:11px;color:var(--muted);line-height:1.5}
+.archive-tabs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 16px}
+.archive-tab{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:11px;padding:12px;font-size:13px;font-weight:800}
+.archive-tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.archive-meta{margin-top:9px;padding:10px 12px;border-radius:10px;background:#F7F6F3;font-size:12px;line-height:1.7;color:var(--muted)}
 .wa-btn{
   width:35px;height:35px;border:0;border-radius:10px;background:#E8F7ED;
   display:inline-grid;place-items:center;color:#168C50;
 }
 .wa-btn svg{width:21px;height:21px;fill:currentColor}
 .phone-link{color:var(--navy);font-weight:750;text-decoration:none}
+
+/* PAX / ÇOCUK SAYACI */
 .pax-box{
   border:1px solid var(--line);
   border-radius:13px;
@@ -242,6 +251,8 @@ textarea{resize:vertical}
 .counter-value{
   min-width:22px;text-align:center;font-size:16px;font-weight:850;
 }
+
+/* TOPLAM PAX NORMAL FONT */
 .pax-total{
   display:flex;
   justify-content:space-between;
@@ -254,34 +265,9 @@ textarea{resize:vertical}
   font-size:14px;
   font-weight:400;
 }
-.pax-total strong{font-size:14px;font-weight:400}
-
-/* İPTAL KAYITLARI */
-.cancelled-item{
-  border-left:4px solid var(--red);
-  background:white;
-  border-radius:15px;
-  padding:15px;
-  margin-bottom:11px;
-  box-shadow:var(--shadow);
-}
-.cancelled-title{
-  font-size:15px;
-  font-weight:850;
-  color:var(--ink);
-}
-.cancelled-meta{
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.9;
-  margin-top:9px;
-}
-.cancelled-meta strong{color:var(--ink)}
-.cancelled-time{
-  font-size:11px;
-  color:var(--red);
-  font-weight:800;
-  margin-top:10px;
+.pax-total strong{
+  font-size:14px;
+  font-weight:400;
 }
 
 @media(min-width:650px){
@@ -371,7 +357,7 @@ textarea{resize:vertical}
       <button class="btn btn-primary" data-go="form">＋ Yeni Rezervasyon</button>
       <button class="btn btn-light" data-go="list">☷ Rezervasyonlar</button>
       <button class="btn btn-light" data-go="report">▤ Personel Raporu</button>
-      <button class="btn btn-danger" data-go="cancelled">✕ İptal Kayıtları</button>
+      <button class="btn btn-light" data-go="archive">▣ Silinen / İptal Edilen</button>
       <button class="btn btn-light" id="exportHome">↓ Excel / CSV</button>
     </div>
     <button class="btn btn-outline push-btn" id="pushBtn">🔔 Bildirimleri Aç</button>
@@ -390,7 +376,7 @@ textarea{resize:vertical}
     <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
     <button class="nav-tab active">Rezervasyonlar</button>
     <button class="nav-tab" data-go="report">Personel Raporu</button>
-    <button class="nav-tab" data-go="cancelled">İptal Kayıtları</button>
+    <button class="nav-tab" data-go="archive">Silinen / İptal Edilen</button>
   </div>
   <h2 class="page-title">Rezervasyonlar</h2>
   <p class="page-subtitle">Takvimden gün seçin veya rezervasyonları arayın.</p>
@@ -446,7 +432,6 @@ textarea{resize:vertical}
   <div class="nav-row">
     <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
     <button class="nav-tab" data-go="list">Rezervasyonlar</button>
-    <button class="nav-tab" data-go="cancelled">İptal Kayıtları</button>
   </div>
   <h2 class="page-title" id="formTitle">Yeni Rezervasyon</h2>
   <p class="page-subtitle">Misafir bilgilerini eksiksiz girin.</p>
@@ -578,12 +563,31 @@ textarea{resize:vertical}
   </div>
 </section>
 
+
+<section id="vArchive" class="hidden">
+  <div class="nav-row">
+    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
+    <button class="nav-tab" data-go="list">Rezervasyonlar</button>
+    <button class="nav-tab" data-go="report">Personel Raporu</button>
+  </div>
+  <h2 class="page-title">Silinen ve İptal Edilen Kayıtlar</h2>
+  <p class="page-subtitle">İptal edilen ve silinen rezervasyonlar, işlemi yapan personel bilgileriyle burada saklanır.</p>
+  <div class="archive-tabs">
+    <button class="archive-tab active" id="tabCancelled" data-archive-tab="cancelled">İptal Edilenler</button>
+    <button class="archive-tab" id="tabDeleted" data-archive-tab="deleted">Silinenler</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-number" id="archiveCount">0</div><div class="stat-label" id="archiveCountLabel">İptal edilen rezervasyon</div></div>
+    <div class="stat"><div class="stat-number" id="archivePax">0</div><div class="stat-label">Toplam misafir</div></div>
+  </div>
+  <div id="archiveItems"></div>
+</section>
+
 <section id="vReport" class="hidden">
   <div class="nav-row">
     <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
     <button class="nav-tab" data-go="list">Rezervasyonlar</button>
     <button class="nav-tab active">Personel Raporu</button>
-    <button class="nav-tab" data-go="cancelled">İptal Kayıtları</button>
   </div>
   <h2 class="page-title">Personel Performansı</h2>
   <p class="page-subtitle">İstediğiniz ayı seçerek personel performansını görüntüleyin.</p>
@@ -605,32 +609,6 @@ textarea{resize:vertical}
   </div>
   <button class="btn btn-gold btn-block" id="exportReport">↓ Raporu CSV Olarak İndir</button>
 </section>
-
-<!-- İPTAL EDİLEN REZERVASYONLAR -->
-<section id="vCancelled" class="hidden">
-  <div class="nav-row">
-    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
-    <button class="nav-tab" data-go="list">Rezervasyonlar</button>
-    <button class="nav-tab" data-go="report">Personel Raporu</button>
-    <button class="nav-tab active">İptal Kayıtları</button>
-  </div>
-
-  <h2 class="page-title">İptal Edilen Rezervasyonlar</h2>
-  <p class="page-subtitle">İptal edilen rezervasyonlar ve iptal işlemini gerçekleştiren personelin kayıtları.</p>
-
-  <div class="list-summary">
-    <div class="list-summary-item">
-      <div class="list-summary-label">Toplam iptal</div>
-      <div class="list-summary-number" id="cancelledCount">0</div>
-    </div>
-    <div class="list-summary-item">
-      <div class="list-summary-label">İptal edilen toplam misafir</div>
-      <div class="list-summary-number" id="cancelledPax">0</div>
-    </div>
-  </div>
-
-  <div id="cancelledItems"></div>
-</section>
 </main>
 
 <script>
@@ -644,6 +622,7 @@ const TZ = 'Europe/Nicosia';
 
 let user = null, month = new Date(), selDate = null, rows = [];
 let chan = null, swReg = null, reloading = false, editingId = null;
+let archiveTab = 'cancelled';
 month.setDate(1);
 
 const STATUS = {
@@ -697,9 +676,10 @@ const hhmm=t=>String(t||'').slice(0,5);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
-const active=r=>(r.status||'confirmed')!=='cancelled';
+const active=r=>(r.status||'confirmed')!=='cancelled'&&!r.deleted_at;
 const paxOf=list=>list.reduce((n,r)=>n+(Number(r.guests)||0),0);
 
+/* PERSONEL İSİMLERİNİ STANDARTLAŞTIR */
 function normalizeStaffName(name){
   return String(name||'')
     .trim()
@@ -720,18 +700,6 @@ function entered(iso){
   if(!iso)return '-';
   return new Date(iso).toLocaleString('tr-TR',{
     timeZone:TZ,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'
-  });
-}
-function cancellationDate(iso){
-  if(!iso)return 'Kayıt bulunamadı';
-  return new Date(iso).toLocaleString('tr-TR',{
-    timeZone:TZ,
-    day:'2-digit',
-    month:'2-digit',
-    year:'numeric',
-    hour:'2-digit',
-    minute:'2-digit',
-    second:'2-digit'
   });
 }
 function formatDate(s){return s?s.split('-').reverse().join('.'):''}
@@ -794,6 +762,8 @@ function savePaxNote(note,free,half){
     :'';
   return [clean,metadata].filter(Boolean).join('\n');
 }
+
+/* TEKNİK PAX KODLARINI TÜM GÖRÜNÜR NOTLARDAN TEMİZLE */
 function visibleNote(note){
   return String(note||'')
     .replace(/\[\[OH_PAX:[^\]]*\]\]/gi,'')
@@ -808,19 +778,16 @@ function childSummary(note){
   return parts.join(' · ');
 }
 
-/* SAYFA GEÇİŞLERİ */
 function go(v){
-  ['Login','Home','List','Form','Report','Cancelled'].forEach(n=>{
+  ['Login','Home','List','Form','Report','Archive'].forEach(n=>{
     $('v'+n).classList.toggle('hidden',n.toLowerCase()!==v);
   });
-
   $('logout').classList.toggle('hidden',v==='login');
-
   if(v==='home')refreshHome();
   if(v==='list')loadMonth();
   if(v==='form'&&!editingId)prepForm();
   if(v==='report')drawReport();
-  if(v==='cancelled')loadCancelled();
+  if(v==='archive')loadArchive();
 }
 document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');
@@ -1003,7 +970,7 @@ function setUser(u){
     if(!$('vList').classList.contains('hidden'))loadMonth();
     if(!$('vHome').classList.contains('hidden'))refreshHome();
     if(!$('vReport').classList.contains('hidden'))drawReport();
-    if(!$('vCancelled').classList.contains('hidden'))loadCancelled();
+    if(!$('vArchive').classList.contains('hidden'))loadArchive();
 
   }).subscribe();
 
@@ -1143,6 +1110,7 @@ function getFilteredRows(){
   const dateMode=$('dateFilter').value;
 
   return rows.filter(r=>{
+    if(!active(r))return false;
     if(dateMode==='day'&&r.res_date!==selDate)return false;
     if(dateMode==='month'&&r.res_date?.slice(0,7)!==selDate?.slice(0,7))return false;
     if(status!=='all'&&(r.status||'confirmed')!==status)return false;
@@ -1211,11 +1179,7 @@ function attachCardEvents(container){
       const updateData={status:newStatus};
 
       if(newStatus==='cancelled'){
-        updateData.cancelled_by=
-          user?.user_metadata?.display_name||
-          user?.email||
-          'Bilinmeyen kullanıcı';
-
+        updateData.cancelled_by=user?.user_metadata?.display_name||user?.email||'Bilinmeyen kullanıcı';
         updateData.cancelled_at=new Date().toISOString();
       }else{
         updateData.cancelled_by=null;
@@ -1223,29 +1187,26 @@ function attachCardEvents(container){
       }
 
       select.disabled=true;
-
-      const {error}=await sb.from('reservations')
+      const {data,error}=await sb.from('reservations')
         .update(updateData)
-        .eq('id',select.dataset.statusId);
-
+        .eq('id',select.dataset.statusId)
+        .select('id,status');
       select.disabled=false;
 
       if(error){
         toast('Durum güncellenemedi: '+error.message);
+        return;
+      }
+      if(!data||!data.length){
+        toast('Kayıt güncellenmedi. Yetki ve oturum bilgilerini kontrol edin.');
         await loadMonth();
         return;
       }
 
-      toast(newStatus==='cancelled'
-        ?'Rezervasyon iptal edildi. İptal bilgileri kaydedildi.'
-        :'Rezervasyon durumu güncellendi.');
-
+      toast(newStatus==='cancelled'?'Rezervasyon iptal edildi.':'Rezervasyon durumu güncellendi.');
       await loadMonth();
       await refreshHome();
-
-      if(!$('vCancelled').classList.contains('hidden')){
-        await loadCancelled();
-      }
+      if(!$('vArchive').classList.contains('hidden'))await loadArchive();
     };
   });
 
@@ -1262,20 +1223,27 @@ function attachCardEvents(container){
 
   container.querySelectorAll('[data-delete]').forEach(button=>{
     button.onclick=async()=>{
-      if(!confirm('Bu rezervasyonu kalıcı olarak silmek istiyor musunuz?'))return;
+      if(!confirm('Bu rezervasyonu Silinenler bölümüne taşımak istiyor musunuz? Kayıt veritabanından fiziksel olarak silinmeyecek.'))return;
 
-      const {error}=await sb.from('reservations')
-        .delete()
-        .eq('id',button.dataset.delete);
+      const deletedBy=user?.user_metadata?.display_name||user?.email||'Bilinmeyen kullanıcı';
+      const {data,error}=await sb.from('reservations')
+        .update({deleted_at:new Date().toISOString(),deleted_by:deletedBy})
+        .eq('id',button.dataset.delete)
+        .select('id,deleted_at,deleted_by');
 
       if(error){
         toast('Silinemedi: '+error.message);
         return;
       }
+      if(!data||!data.length){
+        toast('Kayıt silinenlere taşınamadı. Yetki ve oturum bilgilerini kontrol edin.');
+        return;
+      }
 
-      toast('Rezervasyon silindi.');
+      toast('Rezervasyon Silinenler bölümüne taşındı.');
       await loadMonth();
       await refreshHome();
+      if(!$('vArchive').classList.contains('hidden'))await loadArchive();
     };
   });
 }
@@ -1316,81 +1284,72 @@ $('addForDay').onclick=()=>{
   $('fDate').value=selDate;
 };
 
-/* İPTAL KAYITLARI */
-async function loadCancelled(){
-  const container=$('cancelledItems');
 
-  container.innerHTML='<div class="empty">İptal kayıtları yükleniyor...</div>';
+/* SİLİNEN VE İPTAL EDİLEN KAYITLAR */
+function formatArchiveStamp(value){
+  if(!value)return '-';
+  return new Date(value).toLocaleString('tr-TR',{
+    timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit'
+  });
+}
 
-  const {data,error}=await sb
-    .from('reservations')
-    .select('*')
-    .eq('status','cancelled')
-    .order('cancelled_at',{ascending:false,nullsFirst:false})
-    .order('res_date',{ascending:false});
+async function loadArchive(){
+  const container=$('archiveItems');
+  container.innerHTML='<div class="empty">Kayıtlar yükleniyor...</div>';
+  const isCancelled=archiveTab==='cancelled';
+  let query=sb.from('reservations').select('*');
+  query=isCancelled
+    ?query.eq('status','cancelled').is('deleted_at',null).order('cancelled_at',{ascending:false,nullsFirst:false})
+    :query.not('deleted_at','is',null).order('deleted_at',{ascending:false,nullsFirst:false});
+  const {data,error}=await query.order('res_date',{ascending:false});
 
   if(error){
-    container.innerHTML='<div class="empty">İptal kayıtları alınamadı.</div>';
-    toast('İptal kayıtları yüklenemedi: '+error.message);
+    container.innerHTML='<div class="empty">Kayıtlar alınamadı: '+esc(error.message)+'</div>';
+    toast('Arşiv kayıtları yüklenemedi: '+error.message);
     return;
   }
 
   const list=data||[];
-
-  $('cancelledCount').textContent=list.length;
-  $('cancelledPax').textContent=paxOf(list);
+  $('archiveCount').textContent=list.length;
+  $('archivePax').textContent=paxOf(list);
+  $('archiveCountLabel').textContent=isCancelled?'İptal edilen rezervasyon':'Silinen rezervasyon';
+  $('tabCancelled').classList.toggle('active',isCancelled);
+  $('tabDeleted').classList.toggle('active',!isCancelled);
 
   if(!list.length){
-    container.innerHTML='<div class="empty">Henüz iptal edilmiş rezervasyon bulunmuyor.</div>';
+    container.innerHTML=`<div class="card empty">${isCancelled?'Henüz iptal edilmiş rezervasyon bulunmuyor.':'Henüz silinmiş rezervasyon bulunmuyor.'}</div>`;
     return;
   }
 
   container.innerHTML=list.map(r=>{
+    const actionBy=isCancelled?r.cancelled_by:r.deleted_by;
+    const actionAt=isCancelled?r.cancelled_at:r.deleted_at;
     const children=childSummary(r.note);
     const note=visibleNote(r.note);
-
-    return `
-      <article class="cancelled-item">
-        <div class="res-top">
-          <div>
-            <div class="cancelled-title">
-              ${esc(r.first_name)} ${esc(r.last_name)}
-            </div>
-
-            <div class="cancelled-meta">
-              Rezervasyon tarihi:
-              <strong>${formatDate(r.res_date)} · ${hhmm(r.res_time)}</strong><br>
-
-              Misafir sayısı:
-              <strong>${Number(r.guests)||0} kişi</strong><br>
-
-              ${children?`Çocuk bilgisi: <strong>${esc(children)}</strong><br>`:''}
-
-              Rezervasyonu alan:
-              <strong>${esc(r.taken_by||'-')}</strong><br>
-
-              İptal eden personel:
-              <strong>${esc(r.cancelled_by||'Bilgi bulunamadı')}</strong>
-            </div>
-          </div>
-
-          <span class="status status-cancelled">İPTAL</span>
+    return `<article class="res-item" style="border-left-color:${isCancelled?'var(--red)':'var(--muted)'}">
+      <div class="res-top">
+        <div>
+          <div class="res-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
+          <div class="res-meta"><strong>${formatDate(r.res_date)}</strong> · ${hhmm(r.res_time)} · ${Number(r.guests)||0} pax<br>
+          ${children?`Çocuk bilgisi: <strong>${esc(children)}</strong><br>`:''}
+          Rezervasyonu alan: <strong>${esc(r.taken_by||'-')}</strong>
+          ${r.phone?`<br>Telefon: ${esc(r.phone)}`:''}</div>
         </div>
-
-        <div class="cancelled-time">
-          İptal tarihi ve saati: ${cancellationDate(r.cancelled_at)}
-        </div>
-
-        ${r.phone?`
-          <div class="cancelled-meta">
-            Telefon: <strong>${esc(r.phone)}</strong>
-          </div>`:''}
-
-        ${note?`<div class="res-note">📝 ${esc(note)}</div>`:''}
-      </article>
-    `;
+        <span class="${statusClass(isCancelled?'cancelled':'noshow')}">${isCancelled?'İptal edildi':'Silindi'}</span>
+      </div>
+      ${note?`<div class="res-note">📝 ${esc(note)}</div>`:''}
+      <div class="archive-meta">${isCancelled?'İptal eden personel':'Silen personel'}: <strong>${esc(actionBy||'Bilinmeyen kullanıcı')}</strong><br>${isCancelled?'İptal tarihi':'Silinme tarihi'}: <strong>${formatArchiveStamp(actionAt)}</strong></div>
+    </article>`;
   }).join('');
 }
+
+document.querySelectorAll('[data-archive-tab]').forEach(button=>{
+  button.onclick=()=>{
+    archiveTab=button.dataset.archiveTab;
+    loadArchive();
+  };
+});
 
 /* PHONE HELPERS */
 function normalizePhone(){
@@ -1566,6 +1525,12 @@ async function drawReport(){
 
   filtered.forEach(r=>{
     const originalName=String(r.taken_by||'').trim()||'Belirtilmemiş';
+
+    /*
+      Aynı personelin farklı yazılışlarını tek anahtarda birleştirir.
+      Örnek:
+      dogan = doğan = Doğan = DOĞAN
+    */
     const normalizedName=normalizeStaffName(originalName)||'belirtilmemiş';
 
     if(!staff[normalizedName]){
@@ -1653,7 +1618,7 @@ function downloadCSV(data,filename){
 }
 
 async function exportAll(){
-  const all=await fetchAll();
+  const all=(await fetchAll()).filter(active);
   downloadCSV(all,'ottoman-kebap-rezervasyonlar-'+todayStr()+'.csv');
 }
 
