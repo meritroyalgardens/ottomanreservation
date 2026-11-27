@@ -843,7 +843,11 @@ function go(v){
   });
   $('logout').classList.toggle('hidden',v==='login');
   if(v==='home')refreshHome();
-  if(v==='list')loadMonth();
+  if(v==='list'){
+    // Rezervasyonlar ekranı her açıldığında takvimde seçili günü esas al.
+    $('dateFilter').value='day';
+    loadMonth();
+  }
   if(v==='form'&&!editingId)prepForm();
   if(v==='report')drawReport();
   if(v==='archive')loadArchive();
@@ -1337,7 +1341,8 @@ $('clearFilters').onclick=()=>{
   $('searchBox').value='';
   $('statusFilter').value='all';
   $('categoryFilter').value='all';
-  $('dateFilter').value='all';
+  // Filtreleri temizlerken tüm tarihleri değil, takvimde seçili günü göster.
+  $('dateFilter').value='day';
   drawDay();
 };
 
