@@ -146,6 +146,7 @@ textarea{resize:vertical}
 .day.sel i{color:#14263F;background:#E8C987}
 .day:disabled{cursor:not-allowed}
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.filter-row.category-row{grid-template-columns:1fr;margin-top:2px}
 .search{margin-bottom:10px}
 
 /* REZERVASYON LİSTESİ ÖZETİ */
@@ -406,6 +407,13 @@ textarea{resize:vertical}
   <div class="card">
     <h3 class="section-title">Rezervasyon Ara</h3>
     <input id="searchBox" class="search" placeholder="İsim, soyisim veya telefon ara...">
+    <div class="filter-row category-row">
+      <select id="categoryFilter" aria-label="Rezervasyon türü">
+        <option value="all">Tüm rezervasyonlar · Otel + Casino</option>
+        <option value="otel">Yalnızca Otel</option>
+        <option value="casino">Yalnızca Casino</option>
+      </select>
+    </div>
     <div class="filter-row">
       <select id="statusFilter">
         <option value="all">Tüm durumlar</option>
@@ -415,9 +423,9 @@ textarea{resize:vertical}
         <option value="cancelled">İptal edildi</option>
       </select>
       <select id="dateFilter">
+        <option value="all">Tüm tarihler</option>
         <option value="day">Seçili gün</option>
         <option value="month">Seçili ay</option>
-        <option value="all">Tüm tarihler</option>
       </select>
     </div>
     <button class="btn btn-outline btn-block" id="clearFilters">Filtreleri Temizle</button>
@@ -1160,9 +1168,11 @@ function getFilteredRows(){
   const search=$('searchBox').value.trim().toLocaleLowerCase('tr-TR');
   const status=$('statusFilter').value;
   const dateMode=$('dateFilter').value;
+  const category=$('categoryFilter').value;
 
   return rows.filter(r=>{
     if(!active(r))return false;
+    if(category!=='all'&&(r.category||'otel')!==category)return false;
     if(dateMode==='day'&&r.res_date!==selDate)return false;
     if(dateMode==='month'&&r.res_date?.slice(0,7)!==selDate?.slice(0,7))return false;
     if(status!=='all'&&(r.status||'confirmed')!==status)return false;
@@ -1319,14 +1329,15 @@ function drawDay(){
   attachCardEvents($('items'));
 }
 
-['searchBox','statusFilter','dateFilter'].forEach(id=>{
+['searchBox','statusFilter','dateFilter','categoryFilter'].forEach(id=>{
   $(id).addEventListener(id==='searchBox'?'input':'change',drawDay);
 });
 
 $('clearFilters').onclick=()=>{
   $('searchBox').value='';
   $('statusFilter').value='all';
-  $('dateFilter').value='day';
+  $('categoryFilter').value='all';
+  $('dateFilter').value='all';
   drawDay();
 };
 
