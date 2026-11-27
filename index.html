@@ -87,6 +87,15 @@ main{max-width:1000px;margin:0 auto;padding:21px 16px}
 .btn-danger{background:#FFF0F0;color:var(--red)}
 .btn-small{padding:8px 10px;font-size:12px;border-radius:9px;min-height:34px}
 .btn-block{width:100%}
+.quota-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quota-panel{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fff}
+.quota-panel h4{margin:0 0 8px;font-size:14px}
+.quota-line{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.quota-line:last-child{border-bottom:0}
+.quota-over{color:var(--red);font-weight:850}
+.quota-ok{color:var(--green);font-weight:800}
+.quota-summary{font-size:12px;color:var(--muted);margin-top:7px}
+@media(max-width:520px){.quota-grid{grid-template-columns:1fr}}
 .push-btn{width:100%;margin-top:12px}
 .push-btn.on{background:#E8F6EE;color:var(--green)}
 .hint{
@@ -357,6 +366,7 @@ textarea{resize:vertical}
       <button class="btn btn-primary" data-go="form">＋ Yeni Rezervasyon</button>
       <button class="btn btn-light" data-go="list">☷ Rezervasyonlar</button>
       <button class="btn btn-light" data-go="report">▤ Personel Raporu</button>
+      <button class="btn btn-light" data-go="quota">▦ Günlük Kontenjan</button>
       <button class="btn btn-light" data-go="archive">▣ Silinen / İptal Edilen</button>
       <button class="btn btn-light" id="exportHome">↓ Excel / CSV</button>
     </div>
@@ -376,6 +386,7 @@ textarea{resize:vertical}
     <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
     <button class="nav-tab active">Rezervasyonlar</button>
     <button class="nav-tab" data-go="report">Personel Raporu</button>
+    <button class="nav-tab" data-go="quota">Günlük Kontenjan</button>
     <button class="nav-tab" data-go="archive">Silinen / İptal Edilen</button>
   </div>
   <h2 class="page-title">Rezervasyonlar</h2>
@@ -452,6 +463,13 @@ textarea{resize:vertical}
       <div>
         <label>Saat</label>
         <input id="fTime" type="time">
+      </div>
+      <div class="full">
+        <label>Rezervasyon Türü</label>
+        <select id="fCategory">
+          <option value="otel">Otel</option>
+          <option value="casino">Casino</option>
+        </select>
       </div>
       <div class="full">
         <label>Telefon</label>
@@ -563,6 +581,38 @@ textarea{resize:vertical}
   </div>
 </section>
 
+
+<section id="vQuota" class="hidden">
+  <div class="nav-row">
+    <button class="nav-tab" data-go="home">‹ Ana Ekran</button>
+    <button class="nav-tab" data-go="list">Rezervasyonlar</button>
+    <button class="nav-tab active">Günlük Kontenjan</button>
+  </div>
+  <h2 class="page-title">Günlük Kontenjan</h2>
+  <p class="page-subtitle">Her gün için Otel ve Casino kontenjanlarını ayrı ayrı belirleyin ve dolulukları takip edin.</p>
+  <div class="card">
+    <label>Kontenjan tarihi</label>
+    <input id="quotaDate" type="date">
+    <div class="quota-grid">
+      <div class="quota-panel">
+        <h4>Otel kontenjanı</h4>
+        <label>Günlük limit (PAX)</label>
+        <input id="hotelCapacity" type="number" min="0" step="1" placeholder="Örn. 50">
+      </div>
+      <div class="quota-panel">
+        <h4>Casino kontenjanı</h4>
+        <label>Günlük limit (PAX)</label>
+        <input id="casinoCapacity" type="number" min="0" step="1" placeholder="Örn. 50">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" id="saveQuota" style="margin-top:14px">Kontenjanları Kaydet</button>
+    <div class="err" id="quotaErr"></div>
+  </div>
+  <div class="card">
+    <h3 class="section-title">Seçilen Günün Doluluk Durumu</h3>
+    <div id="quotaStatus"><div class="empty">Tarih seçin.</div></div>
+  </div>
+</section>
 
 <section id="vArchive" class="hidden">
   <div class="nav-row">
@@ -703,6 +753,7 @@ function entered(iso){
   });
 }
 function formatDate(s){return s?s.split('-').reverse().join('.'):''}
+function categoryLabel(value){return value==='casino'?'Casino':'Otel'}
 function statusClass(s){return 'status status-'+(s||'confirmed')}
 function statusOptions(current){
   return Object.entries(STATUS).map(([key,label])=>
@@ -779,7 +830,7 @@ function childSummary(note){
 }
 
 function go(v){
-  ['Login','Home','List','Form','Report','Archive'].forEach(n=>{
+  ['Login','Home','List','Form','Report','Archive','Quota'].forEach(n=>{
     $('v'+n).classList.toggle('hidden',n.toLowerCase()!==v);
   });
   $('logout').classList.toggle('hidden',v==='login');
@@ -788,6 +839,7 @@ function go(v){
   if(v==='form'&&!editingId)prepForm();
   if(v==='report')drawReport();
   if(v==='archive')loadArchive();
+  if(v==='quota')loadQuota();
 }
 document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');
@@ -955,7 +1007,7 @@ function setUser(u){
       const cleanNote=visibleNote(r.note);
 
       let notificationText=
-        'Yeni rezervasyon: '+r.first_name+' '+r.last_name+
+        'Yeni '+categoryLabel(r.category)+' Rezervasyonu: '+r.first_name+' '+r.last_name+
         ' • '+formatDate(r.res_date)+
         ' • '+hhmm(r.res_time)+
         ' • '+(Number(r.guests)||0)+' misafir';
@@ -1021,7 +1073,7 @@ function miniCard(r){
   return `<div class="report-row">
     <div>
       <div class="report-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
-      <div class="small-muted">${hhmm(r.res_time)} · ${Number(r.guests)||0} pax${children?' · '+esc(children):''}</div>
+      <div class="small-muted">${categoryLabel(r.category)} · ${hhmm(r.res_time)} · ${Number(r.guests)||0} pax${children?' · '+esc(children):''}</div>
     </div>
     <span class="${statusClass(r.status)}">${STATUS[r.status||'confirmed']}</span>
   </div>`;
@@ -1143,7 +1195,7 @@ function cardHTML(r){
         <div class="res-name">${esc(r.first_name)} ${esc(r.last_name)}</div>
         ${overdue?'<div class="overdue-tag">SAATİ GEÇTİ · DURUM GÜNCELLENMELİ</div>':''}
         <div class="res-meta">
-          <strong>${formatDate(r.res_date)}</strong> · ${Number(r.guests)||0} pax<br>
+          <strong>${formatDate(r.res_date)}</strong> · ${categoryLabel(r.category)} · ${Number(r.guests)||0} pax<br>
           ${children?`Çocuk bilgisi: <strong>${esc(children)}</strong><br>`:''}
           Rezervasyonu alan: <strong>${esc(r.taken_by||'-')}</strong><br>
           Sisteme giriş: ${entered(r.created_at)}
@@ -1351,6 +1403,59 @@ document.querySelectorAll('[data-archive-tab]').forEach(button=>{
   };
 });
 
+/* GÜNLÜK KONTENJAN */
+async function loadQuota(){
+  if(!$('quotaDate').value)$('quotaDate').value=selDate||todayStr();
+  await refreshQuotaStatus();
+}
+async function refreshQuotaStatus(){
+  const date=$('quotaDate').value;
+  if(!date){$('quotaStatus').innerHTML='<div class="empty">Tarih seçin.</div>';return;}
+  const [{data:quota,error:quotaError},{data:reservations,error:resError}]=await Promise.all([
+    sb.from('daily_quotas').select('*').eq('res_date',date).maybeSingle(),
+    sb.from('reservations').select('guests,category,status,deleted_at').eq('res_date',date)
+  ]);
+  if(quotaError||resError){
+    $('quotaStatus').innerHTML='<div class="empty">Kontenjan bilgisi alınamadı: '+esc((quotaError||resError).message)+'</div>';
+    return;
+  }
+  const activeRows=(reservations||[]).filter(active);
+  const hotel=activeRows.filter(r=>(r.category||'otel')==='otel').reduce((n,r)=>n+(Number(r.guests)||0),0);
+  const casino=activeRows.filter(r=>r.category==='casino').reduce((n,r)=>n+(Number(r.guests)||0),0);
+  const panel=(name,used,cap)=>{
+    const has=cap!==null&&cap!==undefined;
+    const over=has?Math.max(0,used-Number(cap)):0;
+    const remaining=has?Math.max(0,Number(cap)-used):null;
+    return `<div class="quota-panel">
+      <h4>${name}</h4>
+      <div class="quota-line"><span>Kontenjan</span><strong>${has?Number(cap):'Belirlenmedi'}</strong></div>
+      <div class="quota-line"><span>Rezerve PAX</span><strong>${used}</strong></div>
+      <div class="quota-line"><span>Kalan</span><strong>${has?remaining:'-'}</strong></div>
+      <div class="quota-summary ${over?'quota-over':'quota-ok'}">${!has?'Kontenjan girilmedi':over?`+${over} PAX kontenjan aşımı`:(used>=Number(cap)?'Kontenjan doldu':'Kontenjan içinde')}</div>
+    </div>`;
+  };
+  $('quotaStatus').innerHTML=`<div class="quota-grid">${panel('Otel',hotel,quota?.hotel_capacity)}${panel('Casino',casino,quota?.casino_capacity)}</div>`;
+  $('hotelCapacity').value=quota?.hotel_capacity??'';
+  $('casinoCapacity').value=quota?.casino_capacity??'';
+}
+$('quotaDate').addEventListener('change',refreshQuotaStatus);
+$('saveQuota').onclick=async()=>{
+  const date=$('quotaDate').value;
+  const hotel=$('hotelCapacity').value;
+  const casino=$('casinoCapacity').value;
+  if(!date){$('quotaErr').textContent='Lütfen tarih seçin.';return;}
+  if(hotel===''||casino===''){ $('quotaErr').textContent='Otel ve Casino kontenjanlarını ayrı ayrı girin.';return; }
+  if(Number(hotel)<0||Number(casino)<0||!Number.isInteger(Number(hotel))||!Number.isInteger(Number(casino))){$('quotaErr').textContent='Kontenjanlar sıfır veya pozitif tam sayı olmalıdır.';return;}
+  $('saveQuota').disabled=true;$('quotaErr').textContent='';
+  const {error}=await sb.from('daily_quotas').upsert({
+    res_date:date,hotel_capacity:Number(hotel),casino_capacity:Number(casino),updated_at:new Date().toISOString()
+  },{onConflict:'res_date'});
+  $('saveQuota').disabled=false;
+  if(error){$('quotaErr').textContent='Kaydedilemedi: '+error.message;return;}
+  toast('Günlük kontenjanlar kaydedildi.');
+  await refreshQuotaStatus();
+};
+
 /* PHONE HELPERS */
 function normalizePhone(){
   const dial=$('fCountry').value;
@@ -1392,6 +1497,7 @@ function prepForm(){
   ['fFirst','fLast','fTime','fPhone','fNote'].forEach(id=>$(id).value='');
 
   $('fGuests').value=1;
+  $('fCategory').value='otel';
   $('fCountry').value='+90';
   setChildCounts(0,0);
 
@@ -1418,6 +1524,7 @@ function startEdit(r){
   $('fLast').value=r.last_name||'';
   $('fDate').value=r.res_date||'';
   $('fTime').value=hhmm(r.res_time);
+  $('fCategory').value=r.category||'otel';
 
   loadPhone(r.phone);
 
@@ -1472,11 +1579,35 @@ $('saveBtn').onclick=async()=>{
     last_name:value('fLast'),
     res_date:value('fDate'),
     res_time:value('fTime'),
+    category:$('fCategory').value||'otel',
     phone,
     guests:totalPax,
     taken_by:value('fTaker'),
     note:savePaxNote(value('fNote'),children.free,children.half)||null
   };
+
+  // Kontenjan kontrolü: düzenlenen kayıt mevcut toplamdan düşülerek hesaplanır.
+  try{
+    const {data:dayRows,error:dayError}=await sb.from('reservations').select('id,guests,category,status,deleted_at')
+      .eq('res_date',value('fDate'));
+    if(dayError)throw dayError;
+    const used=(dayRows||[]).filter(r=>active(r)&&r.category===(payload.category))
+      .filter(r=>!editingId||String(r.id)!==String(editingId))
+      .reduce((sum,r)=>sum+(Number(r.guests)||0),0);
+    const {data:quota,error:quotaError}=await sb.from('daily_quotas').select('*')
+      .eq('res_date',value('fDate')).maybeSingle();
+    if(quotaError)throw quotaError;
+    const capacity=payload.category==='casino'?quota?.casino_capacity:quota?.hotel_capacity;
+    if(capacity!==null&&capacity!==undefined&&Number(capacity)>=0&&used+totalPax>=Number(capacity)){
+      const over=Math.max(0,used+totalPax-Number(capacity));
+      const question=over>0
+        ?`Kontenjanı doldurdunuz! ${categoryLabel(payload.category)} için limit ${capacity} PAX, kayıt sonrası toplam ${used+totalPax} PAX olacak (${over} fazla). Devam etmek istiyor musunuz?`
+        :`Kontenjanı doldurdunuz! ${categoryLabel(payload.category)} için ${capacity} PAX sınırına ulaşılacak. Devam etmek istiyor musunuz?`;
+      if(!window.confirm(question))return;
+    }
+  }catch(quotaCheckError){
+    return fail('Kontenjan kontrolü yapılamadı: '+(quotaCheckError.message||quotaCheckError));
+  }
 
   $('saveBtn').disabled=true;
 
@@ -1580,13 +1711,14 @@ $('reportMonth').value=todayStr().slice(0,7);
 /* CSV EXPORT */
 function downloadCSV(data,filename){
   const headers=[
-    'Tarih','Saat','Ad','Soyad','Telefon','Pax',
+    'Tarih','Saat','Kategori','Ad','Soyad','Telefon','Pax',
     'Rezervasyonu Alan','Not','Durum','Sisteme Giriş'
   ];
 
   const rowsCSV=data.map(r=>[
     formatDate(r.res_date),
     hhmm(r.res_time),
+    categoryLabel(r.category),
     r.first_name,
     r.last_name,
     r.phone,
